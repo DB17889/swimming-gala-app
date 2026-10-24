@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,126 +7,37 @@
   <title>Swimming Gala Tracker</title>
   <style>
     * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      font-family: system-ui, sans-serif;
-      background: #f1f5f9;
-      color: #172033;
-    }
-
-    header {
-      background: #123456;
-      color: white;
-      padding: 24px 20px;
-    }
-
+    body { margin: 0; font-family: system-ui, sans-serif; background: #f1f5f9; color: #172033; }
+    header { background: #123456; color: white; padding: 24px 20px; }
     header h1 { margin: 0 0 5px; font-size: 24px; }
     header p { margin: 0; color: #dbeafe; }
-
-    main {
-      max-width: 650px;
-      margin: auto;
-      padding: 22px 16px;
-    }
-
-    .panel {
-      background: white;
-      border: 1px solid #dbe3ed;
-      border-radius: 14px;
-      padding: 20px;
-      margin-bottom: 16px;
-    }
-
-    label {
-      display: block;
-      font-weight: 600;
-      margin-bottom: 7px;
-    }
-
-    input {
-      width: 100%;
-      min-height: 48px;
-      padding: 12px;
-      font: inherit;
-      border: 1px solid #94a3b8;
-      border-radius: 9px;
-      margin-bottom: 12px;
-    }
-
-    button {
-      font: inherit;
-      cursor: pointer;
-      touch-action: manipulation;
-    }
-
-    .primary {
-      background: #123456;
-      color: white;
-      border: 0;
-      border-radius: 10px;
-      padding: 13px 16px;
-      min-height: 48px;
-      width: 100%;
-      font-weight: 600;
-    }
-
-    .secondary {
-      background: white;
-      color: #123456;
-      border: 1px solid #cbd5e1;
-      border-radius: 10px;
-      padding: 10px 14px;
-      min-height: 44px;
-    }
-
-    .menu {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    .tile {
-      min-height: 118px;
-      padding: 16px;
-      text-align: left;
-      background: white;
-      color: #172033;
-      border: 1px solid #dbe3ed;
-      border-radius: 14px;
-    }
-
-    .tile strong {
-      display: block;
-      font-size: 16px;
-      margin-bottom: 7px;
-    }
-
-    .tile span {
-      color: #64748b;
-      font-size: 14px;
-    }
-
+    main { max-width: 720px; margin: auto; padding: 22px 16px; }
+    .panel { background: white; border: 1px solid #dbe3ed; border-radius: 14px; padding: 20px; margin-bottom: 16px; }
+    label { display: block; font-weight: 600; margin-bottom: 7px; }
+    input, select { width: 100%; min-height: 46px; padding: 10px 12px; font: inherit; border: 1px solid #94a3b8; border-radius: 9px; margin-bottom: 14px; background: white; color: #172033; }
+    button { font: inherit; cursor: pointer; touch-action: manipulation; }
+    .primary { background: #123456; color: white; border: 0; border-radius: 10px; padding: 13px 16px; min-height: 48px; width: 100%; font-weight: 600; }
+    .secondary { background: white; color: #123456; border: 1px solid #cbd5e1; border-radius: 10px; padding: 10px 14px; min-height: 44px; }
+    .danger { color: #b91c1c; border-color: #fecaca; }
+    .menu { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .tile { min-height: 118px; padding: 16px; text-align: left; background: white; color: #172033; border: 1px solid #dbe3ed; border-radius: 14px; }
+    .tile strong { display: block; font-size: 16px; margin-bottom: 7px; }
+    .tile span { color: #64748b; font-size: 14px; }
     .tile:active { background: #e0f2fe; }
-
     .muted { color: #64748b; font-size: 14px; }
     .status { margin-top: 12px; font-size: 14px; overflow-wrap: anywhere; }
     .error { color: #b91c1c; }
     .success { color: #166534; }
-
-    footer {
-      text-align: center;
-      padding: 24px;
-      color: #64748b;
-      font-size: 13px;
-    }
-
+    .gala-card { border: 1px solid #dbe3ed; border-radius: 12px; padding: 15px; margin-top: 12px; }
+    .gala-card h3 { margin: 0 0 7px; }
+    .gala-card p { margin: 4px 0; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .actions button { flex: 1 1 110px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+    .full { grid-column: 1 / -1; }
+    footer { text-align: center; padding: 24px; color: #64748b; font-size: 13px; }
     [hidden] { display: none !important; }
-
-    @media (max-width: 360px) {
-      .menu { grid-template-columns: 1fr; }
-      header h1 { font-size: 21px; }
-    }
+    @media (max-width: 420px) { .menu, .form-grid { grid-template-columns: 1fr; } .full { grid-column: auto; } header h1 { font-size: 21px; } }
   </style>
 </head>
 <body>
@@ -135,75 +45,86 @@
     <h1>Swimming Gala Tracker</h1>
     <p>Gala results, personal bests and medals</p>
   </header>
-
   <main>
     <section id="login" class="panel">
       <h2>Welcome</h2>
       <p>Enter your app PIN to continue.</p>
       <form id="loginForm">
         <label for="pin">PIN</label>
-        <input id="pin" type="password"
-          inputmode="numeric" autocomplete="off"
-          required aria-describedby="loginStatus">
+        <input id="pin" type="password" inputmode="numeric" autocomplete="off" required aria-describedby="loginStatus">
         <button class="primary" type="submit">Log in</button>
       </form>
       <p id="loginStatus" class="status" role="status"></p>
     </section>
 
     <section id="app" hidden>
-      <div class="panel">
+      <section class="panel">
         <h2 style="margin-top:0">Home</h2>
         <p>What would you like to do?</p>
-        <div id="connection" class="status" role="status">
-          Checking data connection…
+        <div id="connection" class="status" role="status">Checking data connection…</div>
+        <button id="retry" class="secondary" type="button" hidden>Retry connection</button>
+      </section>
+      <div class="menu" id="homeMenu">
+        <button class="tile" data-page="Galas"><strong>🏊 Galas</strong><span>Add and manage competitions</span></button>
+        <button class="tile" data-page="Plan Events"><strong>📋 Plan Events</strong><span>Set up events in advance</span></button>
+        <button class="tile" data-page="Enter Results"><strong>⏱️ Enter Results</strong><span>Record times, PBs and medals</span></button>
+        <button class="tile" data-page="Results History"><strong>📈 Results History</strong><span>Review galas and compare times</span></button>
+      </div>
+
+      <section id="galaPage" class="panel" hidden>
+        <h2 id="galaPageHeading" style="margin-top:0">Galas</h2>
+        <p class="muted">Add each competition here. You can edit or delete it later.</p>
+        <button id="addGala" class="primary" type="button">＋ Add a gala</button>
+        <div id="galaFormWrap" hidden>
+          <hr style="border:0;border-top:1px solid #dbe3ed;margin:20px 0">
+          <h3 id="galaFormHeading">New gala</h3>
+          <form id="galaForm">
+            <div class="form-grid">
+              <div class="full">
+                <label for="galaName">Gala name</label>
+                <input id="galaName" name="name" required maxlength="120" placeholder="e.g. County Championships">
+              </div>
+              <div>
+                <label for="galaDate">Date</label>
+                <input id="galaDate" name="date" type="date" required>
+              </div>
+              <div>
+                <label for="galaType">Pool type</label>
+                <select id="galaType" name="type" required>
+                  <option value="Short Course">Short Course</option>
+                  <option value="Long Course">Long Course</option>
+                </select>
+              </div>
+              <div class="full">
+                <label for="galaVenue">Venue</label>
+                <input id="galaVenue" name="venue" required maxlength="160" placeholder="Pool or leisure centre">
+              </div>
+            </div>
+            <button class="primary" id="saveGala" type="submit">Save gala</button>
+            <button class="secondary" id="cancelGala" type="button" style="width:100%;margin-top:8px">Cancel</button>
+            <p id="galaFormStatus" class="status" role="status"></p>
+          </form>
         </div>
-        <button id="retry" class="secondary" type="button" hidden>
-          Retry connection
-        </button>
-      </div>
-
-      <div class="menu">
-        <button class="tile" data-page="Galas">
-          <strong>🏊 Galas</strong>
-          <span>Add and manage competitions</span>
-        </button>
-        <button class="tile" data-page="Plan Events">
-          <strong>📋 Plan Events</strong>
-          <span>Set up events in advance</span>
-        </button>
-        <button class="tile" data-page="Enter Results">
-          <strong>⏱️ Enter Results</strong>
-          <span>Record times, PBs and medals</span>
-        </button>
-        <button class="tile" data-page="Results History">
-          <strong>📈 Results History</strong>
-          <span>Review galas and compare times</span>
-        </button>
-      </div>
-
-      <section id="pagePanel" class="panel" hidden>
-        <h2 id="pageTitle"></h2>
-        <p id="pageMessage"></p>
-        <button id="back" class="secondary" type="button">
-          Back to home
-        </button>
+        <div id="galaList" aria-live="polite"></div>
+        <p id="galaStatus" class="status" role="status"></p>
+        <button id="backHome" class="secondary" type="button" style="margin-top:18px">Back to home</button>
       </section>
 
-      <p style="margin-top:18px">
-        <button id="logout" class="secondary" type="button">
-          Log out
-        </button>
-      </p>
+      <section id="placeholderPage" class="panel" hidden>
+        <h2 id="pageTitle" style="margin-top:0"></h2>
+        <p id="pageMessage"></p>
+        <button id="back" class="secondary" type="button">Back to home</button>
+      </section>
+      <p style="margin-top:18px"><button id="logout" class="secondary" type="button">Log out</button></p>
     </section>
   </main>
-
   <footer>Swimming Gala Tracker</footer>
 
   <script>
     const API = "https://swimming-gala-api.dan-belfield.workers.dev/api/data";
-
     let appPin = "";
     let galaData = null;
+    let editingGalaId = null;
 
     const loginSection = document.getElementById("login");
     const appSection = document.getElementById("app");
@@ -211,66 +132,197 @@
     const loginStatus = document.getElementById("loginStatus");
     const connection = document.getElementById("connection");
     const retryButton = document.getElementById("retry");
-    const pagePanel = document.getElementById("pagePanel");
+    const galaPage = document.getElementById("galaPage");
+    const placeholderPage = document.getElementById("placeholderPage");
+    const galaFormWrap = document.getElementById("galaFormWrap");
+    const galaForm = document.getElementById("galaForm");
 
     function setStatus(element, message, type = "") {
       element.textContent = message;
       element.className = "status " + type;
     }
 
+    async function apiRequest(method, data) {
+      const options = {
+        method,
+        headers: { "X-App-Pin": appPin },
+        cache: "no-store"
+      };
+      if (data !== undefined) {
+        options.headers["Content-Type"] = "application/json";
+        options.body = JSON.stringify(data);
+      }
+      const response = await fetch(API, options);
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Request failed (" + response.status + ")");
+      return result;
+    }
+
     async function requestData() {
       setStatus(connection, "Connecting to your private GitHub data…");
       retryButton.hidden = true;
-
       try {
-        const response = await fetch(API, {
-          method: "GET",
-          headers: { "X-App-Pin": appPin },
-          cache: "no-store"
-        });
-
-        const result = await response.json();
-
-        if (!response.ok) {
-          throw new Error(result.error || "Request failed (" + response.status + ")");
-        }
-
-        if (!result || !Array.isArray(result.galas)) {
-          throw new Error("The data file has an unexpected format.");
-        }
-
+        const result = await apiRequest("GET");
+        if (!result || !Array.isArray(result.galas)) throw new Error("The data file has an unexpected format.");
         galaData = result;
-        setStatus(
-          connection,
-          "Connected successfully. " + galaData.galas.length +
-          " gala(s) found in your data file.",
-          "success"
-        );
+        setStatus(connection, "Connected successfully. " + galaData.galas.length + " gala(s) found in your data file.", "success");
+        renderGalas();
       } catch (error) {
         galaData = null;
-        setStatus(
-          connection,
-          "Connection failed: " + error.message +
-          ". Check your Worker URL, PIN secret and GitHub permissions.",
-          "error"
-        );
+        setStatus(connection, "Connection failed: " + error.message + ". Check your Worker URL, PIN secret and GitHub permissions.", "error");
         retryButton.hidden = false;
       }
+    }
+
+    function makeId() {
+      if (window.crypto && typeof window.crypto.randomUUID === "function") return window.crypto.randomUUID();
+      return "gala-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
+    }
+
+    function formatDate(dateString) {
+      if (!dateString) return "Date not set";
+      const date = new Date(dateString + "T12:00:00");
+      return Number.isNaN(date.getTime()) ? dateString : date.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+    }
+
+    function renderGalas() {
+      const list = document.getElementById("galaList");
+      list.replaceChildren();
+      if (!galaData || galaData.galas.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "muted";
+        empty.textContent = "No galas yet. Select “Add a gala” to create your first one.";
+        list.appendChild(empty);
+        return;
+      }
+      const sorted = [...galaData.galas].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+      sorted.forEach(gala => {
+        const card = document.createElement("article");
+        card.className = "gala-card";
+        const title = document.createElement("h3");
+        title.textContent = gala.name || "Untitled gala";
+        const date = document.createElement("p");
+        date.textContent = "📅 " + formatDate(gala.date);
+        const type = document.createElement("p");
+        type.textContent = "🏊 " + (gala.type || "Pool type not set");
+        const venue = document.createElement("p");
+        venue.textContent = "📍 " + (gala.venue || "Venue not set");
+        const actions = document.createElement("div");
+        actions.className = "actions";
+        const edit = document.createElement("button");
+        edit.type = "button";
+        edit.className = "secondary";
+        edit.textContent = "Edit";
+        edit.addEventListener("click", () => openGalaForm(gala.id));
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "secondary danger";
+        remove.textContent = "Delete";
+        remove.addEventListener("click", () => deleteGala(gala.id));
+        actions.append(edit, remove);
+        card.append(title, date, type, venue, actions);
+        list.appendChild(card);
+      });
+    }
+
+    function openGalaForm(id = null) {
+      editingGalaId = id;
+      galaForm.reset();
+      setStatus(document.getElementById("galaFormStatus"), "");
+      document.getElementById("galaFormHeading").textContent = id ? "Edit gala" : "New gala";
+      document.getElementById("saveGala").textContent = id ? "Save changes" : "Save gala";
+      if (id) {
+        const gala = galaData.galas.find(item => item.id === id);
+        if (!gala) return;
+        document.getElementById("galaName").value = gala.name || "";
+        document.getElementById("galaDate").value = gala.date || "";
+        document.getElementById("galaType").value = gala.type || "Short Course";
+        document.getElementById("galaVenue").value = gala.venue || "";
+      }
+      galaFormWrap.hidden = false;
+      document.getElementById("galaFormHeading").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function closeGalaForm() {
+      galaFormWrap.hidden = true;
+      galaForm.reset();
+      editingGalaId = null;
+      setStatus(document.getElementById("galaFormStatus"), "");
+    }
+
+    async function saveData() {
+      setStatus(document.getElementById("galaFormStatus"), "Saving to your private GitHub data…");
+      document.getElementById("saveGala").disabled = true;
+      try {
+        await apiRequest("PUT", galaData);
+        setStatus(document.getElementById("galaFormStatus"), "Saved successfully.", "success");
+        setStatus(connection, "Connected successfully. " + galaData.galas.length + " gala(s) found in your data file.", "success");
+        renderGalas();
+        closeGalaForm();
+        setStatus(document.getElementById("galaStatus"), "Changes saved to your private GitHub data.", "success");
+      } catch (error) {
+        setStatus(document.getElementById("galaFormStatus"), "Could not save: " + error.message + ". Your changes are still on this screen; try again.", "error");
+      } finally {
+        document.getElementById("saveGala").disabled = false;
+      }
+    }
+
+    galaForm.addEventListener("submit", async event => {
+      event.preventDefault();
+      if (!galaData) return;
+      const gala = {
+        id: editingGalaId || makeId(),
+        name: document.getElementById("galaName").value.trim(),
+        date: document.getElementById("galaDate").value,
+        type: document.getElementById("galaType").value,
+        venue: document.getElementById("galaVenue").value.trim()
+      };
+      if (editingGalaId) {
+        const index = galaData.galas.findIndex(item => item.id === editingGalaId);
+        if (index !== -1) galaData.galas[index] = { ...galaData.galas[index], ...gala };
+      } else {
+        galaData.galas.push(gala);
+      }
+      await saveData();
+    });
+
+    async function deleteGala(id) {
+      const gala = galaData.galas.find(item => item.id === id);
+      if (!gala || !window.confirm("Delete “" + (gala.name || "this gala") + "”? This cannot be undone.")) return;
+      const oldGalas = galaData.galas;
+      galaData.galas = oldGalas.filter(item => item.id !== id);
+      setStatus(document.getElementById("galaStatus"), "Saving deletion…");
+      try {
+        await apiRequest("PUT", galaData);
+        renderGalas();
+        setStatus(document.getElementById("galaStatus"), "Gala deleted and changes saved.", "success");
+        setStatus(connection, "Connected successfully. " + galaData.galas.length + " gala(s) found in your data file.", "success");
+      } catch (error) {
+        galaData.galas = oldGalas;
+        renderGalas();
+        setStatus(document.getElementById("galaStatus"), "Could not delete: " + error.message + ". Nothing was removed from the saved data.", "error");
+      }
+    }
+
+    function showHome() {
+      document.getElementById("homeMenu").hidden = false;
+      galaPage.hidden = true;
+      placeholderPage.hidden = true;
+      closeGalaForm();
+      setStatus(document.getElementById("galaStatus"), "");
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
     loginForm.addEventListener("submit", async event => {
       event.preventDefault();
       appPin = document.getElementById("pin").value.trim();
-
       if (!appPin) {
         setStatus(loginStatus, "Please enter your PIN.", "error");
         return;
       }
-
       loginSection.hidden = true;
       appSection.hidden = false;
       await requestData();
-
       if (!galaData) {
         loginSection.hidden = false;
         appSection.hidden = true;
@@ -283,33 +335,34 @@
     });
 
     retryButton.addEventListener("click", requestData);
-
     document.querySelectorAll("[data-page]").forEach(button => {
       button.addEventListener("click", () => {
-        document.getElementById("pageTitle").textContent =
-          button.dataset.page;
-
-        document.getElementById("pageMessage").textContent =
-          button.dataset.page +
-          " will be built next. Your data connection is " +
-          (galaData ? "working." : "not available.");
-
-        pagePanel.hidden = false;
-        pagePanel.scrollIntoView({ behavior: "smooth", block: "start" });
+        const page = button.dataset.page;
+        document.getElementById("homeMenu").hidden = true;
+        if (page === "Galas") {
+          placeholderPage.hidden = true;
+          galaPage.hidden = false;
+          renderGalas();
+          galaPage.scrollIntoView({ behavior: "smooth", block: "start" });
+        } else {
+          galaPage.hidden = true;
+          document.getElementById("pageTitle").textContent = page;
+          document.getElementById("pageMessage").textContent = page + " will be built next. Your data connection is working.";
+          placeholderPage.hidden = false;
+          placeholderPage.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
       });
     });
-
-    document.getElementById("back").addEventListener("click", () => {
-      pagePanel.hidden = true;
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    });
-
+    document.getElementById("addGala").addEventListener("click", () => openGalaForm());
+    document.getElementById("cancelGala").addEventListener("click", closeGalaForm);
+    document.getElementById("backHome").addEventListener("click", showHome);
+    document.getElementById("back").addEventListener("click", showHome);
     document.getElementById("logout").addEventListener("click", () => {
       appPin = "";
       galaData = null;
       appSection.hidden = true;
-      pagePanel.hidden = true;
       loginSection.hidden = false;
+      showHome();
       setStatus(loginStatus, "You have logged out.");
     });
   </script>
