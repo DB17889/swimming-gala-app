@@ -19,10 +19,10 @@
     header {
       background: #123456;
       color: white;
-      padding: 26px 20px;
+      padding: 24px 20px;
     }
 
-    header h1 { margin: 0 0 6px; font-size: 25px; }
+    header h1 { margin: 0 0 5px; font-size: 24px; }
     header p { margin: 0; color: #dbeafe; }
 
     main {
@@ -31,20 +31,65 @@
       padding: 22px 16px;
     }
 
+    .panel {
+      background: white;
+      border: 1px solid #dbe3ed;
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 7px;
+    }
+
+    input {
+      width: 100%;
+      min-height: 48px;
+      padding: 12px;
+      font: inherit;
+      border: 1px solid #94a3b8;
+      border-radius: 9px;
+      margin-bottom: 12px;
+    }
+
+    button {
+      font: inherit;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .primary {
+      background: #123456;
+      color: white;
+      border: 0;
+      border-radius: 10px;
+      padding: 13px 16px;
+      min-height: 48px;
+      width: 100%;
+      font-weight: 600;
+    }
+
+    .secondary {
+      background: white;
+      color: #123456;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 10px 14px;
+      min-height: 44px;
+    }
+
     .menu {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 12px;
     }
 
-    button {
-      font: inherit;
-      cursor: pointer;
-    }
-
     .tile {
-      min-height: 115px;
-      padding: 18px;
+      min-height: 118px;
+      padding: 16px;
       text-align: left;
       background: white;
       color: #172033;
@@ -52,24 +97,36 @@
       border-radius: 14px;
     }
 
-    .tile strong { display: block; font-size: 17px; margin-bottom: 7px; }
-    .tile span { color: #64748b; font-size: 14px; }
+    .tile strong {
+      display: block;
+      font-size: 16px;
+      margin-bottom: 7px;
+    }
+
+    .tile span {
+      color: #64748b;
+      font-size: 14px;
+    }
 
     .tile:active { background: #e0f2fe; }
 
-    #notice {
-      margin-top: 18px;
-      padding: 14px;
-      background: white;
-      border-radius: 10px;
-      display: none;
-    }
+    .muted { color: #64748b; font-size: 14px; }
+    .status { margin-top: 12px; font-size: 14px; overflow-wrap: anywhere; }
+    .error { color: #b91c1c; }
+    .success { color: #166534; }
 
     footer {
       text-align: center;
       padding: 24px;
       color: #64748b;
       font-size: 13px;
+    }
+
+    [hidden] { display: none !important; }
+
+    @media (max-width: 360px) {
+      .menu { grid-template-columns: 1fr; }
+      header h1 { font-size: 21px; }
     }
   </style>
 </head>
@@ -80,42 +137,181 @@
   </header>
 
   <main>
-    <h2>Home</h2>
-    <p>What would you like to do?</p>
+    <section id="login" class="panel">
+      <h2>Welcome</h2>
+      <p>Enter your app PIN to continue.</p>
+      <form id="loginForm">
+        <label for="pin">PIN</label>
+        <input id="pin" type="password"
+          inputmode="numeric" autocomplete="off"
+          required aria-describedby="loginStatus">
+        <button class="primary" type="submit">Log in</button>
+      </form>
+      <p id="loginStatus" class="status" role="status"></p>
+    </section>
 
-    <div class="menu">
-      <button class="tile" onclick="openPage('Galas')">
-        <strong>🏊 Galas</strong>
-        <span>Add and manage competitions</span>
-      </button>
+    <section id="app" hidden>
+      <div class="panel">
+        <h2 style="margin-top:0">Home</h2>
+        <p>What would you like to do?</p>
+        <div id="connection" class="status" role="status">
+          Checking data connection…
+        </div>
+        <button id="retry" class="secondary" type="button" hidden>
+          Retry connection
+        </button>
+      </div>
 
-      <button class="tile" onclick="openPage('Plan Events')">
-        <strong>📋 Plan Events</strong>
-        <span>Set up events in advance</span>
-      </button>
+      <div class="menu">
+        <button class="tile" data-page="Galas">
+          <strong>🏊 Galas</strong>
+          <span>Add and manage competitions</span>
+        </button>
+        <button class="tile" data-page="Plan Events">
+          <strong>📋 Plan Events</strong>
+          <span>Set up events in advance</span>
+        </button>
+        <button class="tile" data-page="Enter Results">
+          <strong>⏱️ Enter Results</strong>
+          <span>Record times, PBs and medals</span>
+        </button>
+        <button class="tile" data-page="Results History">
+          <strong>📈 Results History</strong>
+          <span>Review galas and compare times</span>
+        </button>
+      </div>
 
-      <button class="tile" onclick="openPage('Enter Results')">
-        <strong>⏱️ Enter Results</strong>
-        <span>Record times, PBs and medals</span>
-      </button>
+      <section id="pagePanel" class="panel" hidden>
+        <h2 id="pageTitle"></h2>
+        <p id="pageMessage"></p>
+        <button id="back" class="secondary" type="button">
+          Back to home
+        </button>
+      </section>
 
-      <button class="tile" onclick="openPage('Results History')">
-        <strong>📈 Results History</strong>
-        <span>Review galas and compare times</span>
-      </button>
-    </div>
-
-    <div id="notice" role="status"></div>
+      <p style="margin-top:18px">
+        <button id="logout" class="secondary" type="button">
+          Log out
+        </button>
+      </p>
+    </section>
   </main>
 
-  <footer>Swimming Gala Tracker · Version 1</footer>
+  <footer>Swimming Gala Tracker</footer>
 
   <script>
-    function openPage(page) {
-      const notice = document.getElementById('notice');
-      notice.textContent = page + ' — this section will be built next.';
-      notice.style.display = 'block';
+    const API = "https://swimming-gala-api.dan-belfield.workers.dev/api/data";
+
+    let appPin = "";
+    let galaData = null;
+
+    const loginSection = document.getElementById("login");
+    const appSection = document.getElementById("app");
+    const loginForm = document.getElementById("loginForm");
+    const loginStatus = document.getElementById("loginStatus");
+    const connection = document.getElementById("connection");
+    const retryButton = document.getElementById("retry");
+    const pagePanel = document.getElementById("pagePanel");
+
+    function setStatus(element, message, type = "") {
+      element.textContent = message;
+      element.className = "status " + type;
     }
+
+    async function requestData() {
+      setStatus(connection, "Connecting to your private GitHub data…");
+      retryButton.hidden = true;
+
+      try {
+        const response = await fetch(API, {
+          method: "GET",
+          headers: { "X-App-Pin": appPin },
+          cache: "no-store"
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || "Request failed (" + response.status + ")");
+        }
+
+        if (!result || !Array.isArray(result.galas)) {
+          throw new Error("The data file has an unexpected format.");
+        }
+
+        galaData = result;
+        setStatus(
+          connection,
+          "Connected successfully. " + galaData.galas.length +
+          " gala(s) found in your data file.",
+          "success"
+        );
+      } catch (error) {
+        galaData = null;
+        setStatus(
+          connection,
+          "Connection failed: " + error.message +
+          ". Check your Worker URL, PIN secret and GitHub permissions.",
+          "error"
+        );
+        retryButton.hidden = false;
+      }
+    }
+
+    loginForm.addEventListener("submit", async event => {
+      event.preventDefault();
+      appPin = document.getElementById("pin").value.trim();
+
+      if (!appPin) {
+        setStatus(loginStatus, "Please enter your PIN.", "error");
+        return;
+      }
+
+      loginSection.hidden = true;
+      appSection.hidden = false;
+      await requestData();
+
+      if (!galaData) {
+        loginSection.hidden = false;
+        appSection.hidden = true;
+        setStatus(loginStatus, "Login or connection failed. Please try again.", "error");
+        document.getElementById("pin").value = "";
+        appPin = "";
+      } else {
+        document.getElementById("pin").value = "";
+      }
+    });
+
+    retryButton.addEventListener("click", requestData);
+
+    document.querySelectorAll("[data-page]").forEach(button => {
+      button.addEventListener("click", () => {
+        document.getElementById("pageTitle").textContent =
+          button.dataset.page;
+
+        document.getElementById("pageMessage").textContent =
+          button.dataset.page +
+          " will be built next. Your data connection is " +
+          (galaData ? "working." : "not available.");
+
+        pagePanel.hidden = false;
+        pagePanel.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+
+    document.getElementById("back").addEventListener("click", () => {
+      pagePanel.hidden = true;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    document.getElementById("logout").addEventListener("click", () => {
+      appPin = "";
+      galaData = null;
+      appSection.hidden = true;
+      pagePanel.hidden = true;
+      loginSection.hidden = false;
+      setStatus(loginStatus, "You have logged out.");
+    });
   </script>
 </body>
 </html>
