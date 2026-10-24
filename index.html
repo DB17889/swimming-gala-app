@@ -31,6 +31,9 @@
     .gala-card { border: 1px solid #dbe3ed; border-radius: 12px; padding: 15px; margin-top: 12px; }
     .gala-card h3 { margin: 0 0 7px; }
     .gala-card p { margin: 4px 0; }
+    .event-card { border: 1px solid #dbe3ed; border-radius: 12px; padding: 15px; margin-top: 12px; }
+    .event-card h3 { margin: 0 0 7px; }
+    .section-heading { margin: 22px 0 8px; }
     .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
     .actions button { flex: 1 1 110px; }
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
@@ -110,6 +113,51 @@
         <button id="backHome" class="secondary" type="button" style="margin-top:18px">Back to home</button>
       </section>
 
+      <section id="eventPage" class="panel" hidden>
+        <h2 style="margin-top:0">Plan Events</h2>
+        <p class="muted">Choose a gala, then add the events that will take place at that competition.</p>
+        <label for="eventGalaSelect">Gala</label>
+        <select id="eventGalaSelect"><option value="">Choose a gala</option></select>
+        <div id="eventWorkspace" hidden>
+          <p id="eventGalaDetails" class="muted"></p>
+          <button id="addEvent" class="primary" type="button">＋ Add an event</button>
+          <div id="eventFormWrap" hidden>
+            <hr style="border:0;border-top:1px solid #dbe3ed;margin:20px 0">
+            <h3 id="eventFormHeading">New event</h3>
+            <form id="eventForm">
+              <div class="form-grid">
+                <div>
+                  <label for="eventStroke">Stroke</label>
+                  <select id="eventStroke" required>
+                    <option value="Freestyle">Freestyle</option>
+                    <option value="Backstroke">Backstroke</option>
+                    <option value="Butterfly">Butterfly</option>
+                    <option value="IM">Individual Medley (IM)</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="eventDistance">Distance</label>
+                  <select id="eventDistance" required>
+                    <option value="50">50m</option>
+                    <option value="100">100m</option>
+                    <option value="200">200m</option>
+                    <option value="400">400m</option>
+                    <option value="800">800m</option>
+                  </select>
+                </div>
+              </div>
+              <button class="primary" id="saveEvent" type="submit">Save event</button>
+              <button class="secondary" id="cancelEvent" type="button" style="width:100%;margin-top:8px">Cancel</button>
+              <p id="eventFormStatus" class="status" role="status"></p>
+            </form>
+          </div>
+          <h3 class="section-heading">Planned events</h3>
+          <div id="eventList" aria-live="polite"></div>
+          <p id="eventStatus" class="status" role="status"></p>
+        </div>
+        <button id="eventBackHome" class="secondary" type="button" style="margin-top:18px">Back to home</button>
+      </section>
+
       <section id="placeholderPage" class="panel" hidden>
         <h2 id="pageTitle" style="margin-top:0"></h2>
         <p id="pageMessage"></p>
@@ -125,6 +173,7 @@
     let appPin = "";
     let galaData = null;
     let editingGalaId = null;
+    let editingEventId = null;
 
     const loginSection = document.getElementById("login");
     const appSection = document.getElementById("app");
@@ -134,6 +183,11 @@
     const retryButton = document.getElementById("retry");
     const galaPage = document.getElementById("galaPage");
     const placeholderPage = document.getElementById("placeholderPage");
+    const eventPage = document.getElementById("eventPage");
+    const eventWorkspace = document.getElementById("eventWorkspace");
+    const eventGalaSelect = document.getElementById("eventGalaSelect");
+    const eventFormWrap = document.getElementById("eventFormWrap");
+    const eventForm = document.getElementById("eventForm");
     const galaFormWrap = document.getElementById("galaFormWrap");
     const galaForm = document.getElementById("galaForm");
 
@@ -167,6 +221,7 @@
         galaData = result;
         setStatus(connection, "Connected successfully. " + galaData.galas.length + " gala(s) found in your data file.", "success");
         renderGalas();
+        refreshGalaOptions(true);
       } catch (error) {
         galaData = null;
         setStatus(connection, "Connection failed: " + error.message + ". Check your Worker URL, PIN secret and GitHub permissions.", "error");
@@ -258,6 +313,7 @@
         setStatus(document.getElementById("galaFormStatus"), "Saved successfully.", "success");
         setStatus(connection, "Connected successfully. " + galaData.galas.length + " gala(s) found in your data file.", "success");
         renderGalas();
+        refreshGalaOptions(true);
         closeGalaForm();
         setStatus(document.getElementById("galaStatus"), "Changes saved to your private GitHub data.", "success");
       } catch (error) {
@@ -295,6 +351,7 @@
       try {
         await apiRequest("PUT", galaData);
         renderGalas();
+        refreshGalaOptions(true);
         setStatus(document.getElementById("galaStatus"), "Gala deleted and changes saved.", "success");
         setStatus(connection, "Connected successfully. " + galaData.galas.length + " gala(s) found in your data file.", "success");
       } catch (error) {
@@ -304,12 +361,195 @@
       }
     }
 
+    const EVENT_STROKES = ["Freestyle", "Backstroke", "Butterfly", "IM"];
+    const EVENT_DISTANCES = [25, 50, 100, 200, 400, 800];
+
+    function selectedGala() {
+      return galaData && galaData.galas.find(gala => gala.id === eventGalaSelect.value);
+    }
+
+    function refreshGalaOptions(keepSelection = true) {
+      const previous = keepSelection ? eventGalaSelect.value : "";
+      eventGalaSelect.replaceChildren();
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = galaData && galaData.galas.length ? "Choose a gala" : "Add a gala first";
+      eventGalaSelect.appendChild(placeholder);
+      if (galaData) {
+        [...galaData.galas].sort((a, b) => (b.date || "").localeCompare(a.date || "")).forEach(gala => {
+          const option = document.createElement("option");
+          option.value = gala.id;
+          option.textContent = (gala.name || "Untitled gala") + " — " + formatDate(gala.date);
+          eventGalaSelect.appendChild(option);
+        });
+      }
+      if (previous && galaData && galaData.galas.some(gala => gala.id === previous)) {
+        eventGalaSelect.value = previous;
+      }
+      updateEventWorkspace();
+    }
+
+    function updateDistanceOptions(selectedValue) {
+      const gala = selectedGala();
+      const distances = gala && gala.type === "Short Course" ? EVENT_DISTANCES : EVENT_DISTANCES.filter(distance => distance !== 25);
+      const select = document.getElementById("eventDistance");
+      select.replaceChildren();
+      distances.forEach(distance => {
+        const option = document.createElement("option");
+        option.value = String(distance);
+        option.textContent = distance + "m";
+        select.appendChild(option);
+      });
+      if (selectedValue && distances.includes(Number(selectedValue))) select.value = String(selectedValue);
+    }
+
+    function updateEventWorkspace() {
+      const gala = selectedGala();
+      eventWorkspace.hidden = !gala;
+      if (!gala) {
+        closeEventForm();
+        return;
+      }
+      document.getElementById("eventGalaDetails").textContent = formatDate(gala.date) + " · " + (gala.type || "Pool type not set") + " · " + (gala.venue || "Venue not set");
+      renderEvents();
+    }
+
+    function renderEvents() {
+      const list = document.getElementById("eventList");
+      list.replaceChildren();
+      const gala = selectedGala();
+      if (!gala) return;
+      const events = Array.isArray(gala.events) ? gala.events : [];
+      if (!events.length) {
+        const empty = document.createElement("p");
+        empty.className = "muted";
+        empty.textContent = "No events planned for this gala yet. Select “Add an event” to get started.";
+        list.appendChild(empty);
+        return;
+      }
+      [...events].sort((a, b) => Number(a.distance) - Number(b.distance) || String(a.stroke).localeCompare(String(b.stroke))).forEach(event => {
+        const card = document.createElement("article");
+        card.className = "event-card";
+        const title = document.createElement("h3");
+        title.textContent = (event.distance || "?") + "m " + (event.stroke || "Event");
+        const details = document.createElement("p");
+        details.className = "muted";
+        details.textContent = "Planned for " + (gala.name || "this gala");
+        const actions = document.createElement("div");
+        actions.className = "actions";
+        const edit = document.createElement("button");
+        edit.type = "button";
+        edit.className = "secondary";
+        edit.textContent = "Edit";
+        edit.addEventListener("click", () => openEventForm(event.id));
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "secondary danger";
+        remove.textContent = "Delete";
+        remove.addEventListener("click", () => deleteEvent(event.id));
+        actions.append(edit, remove);
+        card.append(title, details, actions);
+        list.appendChild(card);
+      });
+    }
+
+    function openEventForm(id = null) {
+      const gala = selectedGala();
+      if (!gala) return;
+      editingEventId = id;
+      eventForm.reset();
+      setStatus(document.getElementById("eventFormStatus"), "");
+      document.getElementById("eventFormHeading").textContent = id ? "Edit event" : "New event";
+      document.getElementById("saveEvent").textContent = id ? "Save changes" : "Save event";
+      const existing = id && Array.isArray(gala.events) ? gala.events.find(item => item.id === id) : null;
+      updateDistanceOptions(existing ? existing.distance : undefined);
+      if (existing) {
+        document.getElementById("eventStroke").value = EVENT_STROKES.includes(existing.stroke) ? existing.stroke : "Freestyle";
+        if ([...document.getElementById("eventDistance").options].some(option => option.value === String(existing.distance))) {
+          document.getElementById("eventDistance").value = String(existing.distance);
+        }
+      }
+      eventFormWrap.hidden = false;
+      document.getElementById("eventFormHeading").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function closeEventForm() {
+      eventFormWrap.hidden = true;
+      eventForm.reset();
+      editingEventId = null;
+      setStatus(document.getElementById("eventFormStatus"), "");
+    }
+
+    async function saveEventData() {
+      setStatus(document.getElementById("eventFormStatus"), "Saving to your private GitHub data…");
+      document.getElementById("saveEvent").disabled = true;
+      try {
+        await apiRequest("PUT", galaData);
+        closeEventForm();
+        renderEvents();
+        setStatus(document.getElementById("eventStatus"), "Event saved successfully.", "success");
+        setStatus(connection, "Connected successfully. " + galaData.galas.length + " gala(s) found in your data file.", "success");
+      } catch (error) {
+        setStatus(document.getElementById("eventFormStatus"), "Could not save: " + error.message + ". Your changes are still on this screen; try again.", "error");
+      } finally {
+        document.getElementById("saveEvent").disabled = false;
+      }
+    }
+
+    eventForm.addEventListener("submit", async event => {
+      event.preventDefault();
+      const gala = selectedGala();
+      if (!gala || !galaData) return;
+      const stroke = document.getElementById("eventStroke").value;
+      const distance = Number(document.getElementById("eventDistance").value);
+      if (!EVENT_STROKES.includes(stroke) || !EVENT_DISTANCES.includes(distance) || (distance === 25 && gala.type !== "Short Course")) {
+        setStatus(document.getElementById("eventFormStatus"), "That stroke or distance is not valid for this gala.", "error");
+        return;
+      }
+      if (!Array.isArray(gala.events)) gala.events = [];
+      const duplicate = gala.events.some(item => item.id !== editingEventId && item.stroke === stroke && Number(item.distance) === distance);
+      if (duplicate) {
+        setStatus(document.getElementById("eventFormStatus"), "That event is already planned for this gala.", "error");
+        return;
+      }
+      const plannedEvent = { id: editingEventId || makeId(), stroke, distance };
+      if (editingEventId) {
+        const index = gala.events.findIndex(item => item.id === editingEventId);
+        if (index !== -1) gala.events[index] = { ...gala.events[index], ...plannedEvent };
+      } else {
+        gala.events.push(plannedEvent);
+      }
+      await saveEventData();
+    });
+
+    async function deleteEvent(id) {
+      const gala = selectedGala();
+      if (!gala || !Array.isArray(gala.events)) return;
+      const plannedEvent = gala.events.find(item => item.id === id);
+      if (!plannedEvent || !window.confirm("Delete “" + plannedEvent.distance + "m " + plannedEvent.stroke + "”? This cannot be undone.")) return;
+      const oldEvents = gala.events;
+      gala.events = oldEvents.filter(item => item.id !== id);
+      setStatus(document.getElementById("eventStatus"), "Saving deletion…");
+      try {
+        await apiRequest("PUT", galaData);
+        renderEvents();
+        setStatus(document.getElementById("eventStatus"), "Event deleted and changes saved.", "success");
+      } catch (error) {
+        gala.events = oldEvents;
+        renderEvents();
+        setStatus(document.getElementById("eventStatus"), "Could not delete: " + error.message + ". Nothing was removed from the saved data.", "error");
+      }
+    }
+
     function showHome() {
       document.getElementById("homeMenu").hidden = false;
       galaPage.hidden = true;
+      eventPage.hidden = true;
       placeholderPage.hidden = true;
       closeGalaForm();
+      closeEventForm();
       setStatus(document.getElementById("galaStatus"), "");
+      setStatus(document.getElementById("eventStatus"), "");
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
@@ -341,11 +581,19 @@
         document.getElementById("homeMenu").hidden = true;
         if (page === "Galas") {
           placeholderPage.hidden = true;
+          eventPage.hidden = true;
           galaPage.hidden = false;
           renderGalas();
           galaPage.scrollIntoView({ behavior: "smooth", block: "start" });
+        } else if (page === "Plan Events") {
+          galaPage.hidden = true;
+          placeholderPage.hidden = true;
+          eventPage.hidden = false;
+          refreshGalaOptions(true);
+          eventPage.scrollIntoView({ behavior: "smooth", block: "start" });
         } else {
           galaPage.hidden = true;
+          eventPage.hidden = true;
           document.getElementById("pageTitle").textContent = page;
           document.getElementById("pageMessage").textContent = page + " will be built next. Your data connection is working.";
           placeholderPage.hidden = false;
@@ -357,6 +605,14 @@
     document.getElementById("cancelGala").addEventListener("click", closeGalaForm);
     document.getElementById("backHome").addEventListener("click", showHome);
     document.getElementById("back").addEventListener("click", showHome);
+    document.getElementById("eventBackHome").addEventListener("click", showHome);
+    document.getElementById("addEvent").addEventListener("click", () => openEventForm());
+    document.getElementById("cancelEvent").addEventListener("click", closeEventForm);
+    eventGalaSelect.addEventListener("change", () => {
+      closeEventForm();
+      setStatus(document.getElementById("eventStatus"), "");
+      updateEventWorkspace();
+    });
     document.getElementById("logout").addEventListener("click", () => {
       appPin = "";
       galaData = null;
