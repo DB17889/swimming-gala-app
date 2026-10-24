@@ -1,0 +1,121 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#123456">
+  <title>Swimming Gala Tracker</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background: #f1f5f9;
+      color: #172033;
+    }
+
+    header {
+      background: #123456;
+      color: white;
+      padding: 26px 20px;
+    }
+
+    header h1 { margin: 0 0 6px; font-size: 25px; }
+    header p { margin: 0; color: #dbeafe; }
+
+    main {
+      max-width: 650px;
+      margin: auto;
+      padding: 22px 16px;
+    }
+
+    .menu {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    button {
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .tile {
+      min-height: 115px;
+      padding: 18px;
+      text-align: left;
+      background: white;
+      color: #172033;
+      border: 1px solid #dbe3ed;
+      border-radius: 14px;
+    }
+
+    .tile strong { display: block; font-size: 17px; margin-bottom: 7px; }
+    .tile span { color: #64748b; font-size: 14px; }
+
+    .tile:active { background: #e0f2fe; }
+
+    #notice {
+      margin-top: 18px;
+      padding: 14px;
+      background: white;
+      border-radius: 10px;
+      display: none;
+    }
+
+    footer {
+      text-align: center;
+      padding: 24px;
+      color: #64748b;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Swimming Gala Tracker</h1>
+    <p>Gala results, personal bests and medals</p>
+  </header>
+
+  <main>
+    <h2>Home</h2>
+    <p>What would you like to do?</p>
+
+    <div class="menu">
+      <button class="tile" onclick="openPage('Galas')">
+        <strong>🏊 Galas</strong>
+        <span>Add and manage competitions</span>
+      </button>
+
+      <button class="tile" onclick="openPage('Plan Events')">
+        <strong>📋 Plan Events</strong>
+        <span>Set up events in advance</span>
+      </button>
+
+      <button class="tile" onclick="openPage('Enter Results')">
+        <strong>⏱️ Enter Results</strong>
+        <span>Record times, PBs and medals</span>
+      </button>
+
+      <button class="tile" onclick="openPage('Results History')">
+        <strong>📈 Results History</strong>
+        <span>Review galas and compare times</span>
+      </button>
+    </div>
+
+    <div id="notice" role="status"></div>
+  </main>
+
+  <footer>Swimming Gala Tracker · Version 1</footer>
+
+  <script>
+    function openPage(page) {
+      const notice = document.getElementById('notice');
+      notice.textContent = page + ' — this section will be built next.';
+      notice.style.display = 'block';
+    }
+  </script>
+</body>
+</html>
