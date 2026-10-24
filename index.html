@@ -186,7 +186,6 @@
                 <p id="timeHelp" class="muted">Format example: 01:12.45 (minutes:seconds.hundredths)</p>
               </div>
             </div>
-            <label class="checkbox-row"><input id="resultPB" type="checkbox"> Personal best (PB)</label>
             <label class="checkbox-row"><input id="resultMedal" type="checkbox"> Won a medal</label>
             <div id="placingWrap" hidden>
               <label for="resultPlacing">Place</label>
@@ -210,6 +209,13 @@
         <h2 style="margin-top:0">Results History</h2>
         <p class="muted">Compare times for the same event across your saved galas and review personal bests.</p>
         <div class="history-controls">
+          <div>
+            <label for="historyCourse">Course</label>
+            <select id="historyCourse">
+              <option value="Short Course">Short Course</option>
+              <option value="Long Course">Long Course</option>
+            </select>
+          </div>
           <div>
             <label for="historyStroke">Stroke</label>
             <select id="historyStroke">
@@ -693,7 +699,7 @@
         heading.textContent = event.distance + "m " + event.stroke;
         const details = document.createElement("p");
         details.className = "result-summary";
-        details.textContent = result.time + (result.pb ? " · PB" : "") + (result.medal ? " · Medal — " + ordinal(Number(result.placing)) : "");
+        details.textContent = result.time + (result.medal ? " · Medal — " + ordinal(Number(result.placing)) : "");
         const edit = document.createElement("button");
         edit.type = "button"; edit.className = "secondary"; edit.textContent = "Edit result";
         edit.addEventListener("click", () => { resultsEventSelect.value = event.id; loadSelectedResult(); document.getElementById("resultTime").scrollIntoView({behavior:"smooth",block:"center"}); });
@@ -711,7 +717,6 @@
       if (!event) return;
       const result = event.result || {};
       document.getElementById("resultTime").value = result.time || "";
-      document.getElementById("resultPB").checked = Boolean(result.pb);
       document.getElementById("resultMedal").checked = Boolean(result.medal);
       document.getElementById("resultPlacing").value = String(result.placing || 1);
       document.getElementById("placingWrap").hidden = !result.medal;
@@ -728,7 +733,7 @@
       const placing = medal ? Number(document.getElementById("resultPlacing").value) : null;
       if (!/^[0-9]{1,2}:[0-5][0-9]\.[0-9]{2}$/.test(time)) { setStatus(document.getElementById("resultFormStatus"), "Enter the time as mm:ss.nn, for example 01:12.45.", "error"); return; }
       const previous = event.result;
-      event.result = { time, pb: document.getElementById("resultPB").checked, medal, placing };
+      event.result = { time, medal, placing };
       const button = document.getElementById("saveResult");
       button.disabled = true;
       setStatus(document.getElementById("resultFormStatus"), "Saving result to your private GitHub data…");
@@ -782,7 +787,6 @@
             stroke: event.stroke || "",
             distance: Number(event.distance),
             time: event.result.time,
-            pb: Boolean(event.result.pb),
             medal: Boolean(event.result.medal),
             placing: event.result.placing == null ? null : Number(event.result.placing)
           });
@@ -798,19 +802,20 @@
 
     function renderHistory() {
       const rows = allHistoryResults();
+      const course = document.getElementById("historyCourse").value;
       const stroke = document.getElementById("historyStroke").value;
       const distance = document.getElementById("historyDistance").value;
-      const filtered = rows.filter(row => (!stroke || row.stroke === stroke) && (!distance || row.distance === Number(distance)))
+      const filtered = rows.filter(row => row.type === course && (!stroke || row.stroke === stroke) && (!distance || row.distance === Number(distance)))
         .sort((a, b) => (a.date || "").localeCompare(b.date || "") || a.galaName.localeCompare(b.galaName));
       const stats = document.getElementById("historyStats");
       stats.replaceChildren();
       const fastest = stroke && distance && filtered.length ? [...filtered].sort((a,b) => timeToCentiseconds(a.time)-timeToCentiseconds(b.time))[0] : null;
-      const pbCount = filtered.filter(row => row.pb).length;
+      const personalBest = stroke && distance && filtered.length ? fastest.time : "—";
       const medalCount = filtered.filter(row => row.medal).length;
       [
         {label:"Results", value:String(filtered.length)},
         {label:"Fastest time (select event)", value:fastest ? fastest.time : "—"},
-        {label:"Personal bests", value:String(pbCount)},
+        {label:"Personal best time", value:personalBest},
         {label:"Medals", value:String(medalCount)}
       ].forEach(item => {
         const box = document.createElement("div"); box.className = "history-stat";
@@ -834,8 +839,7 @@
         const timeBlock = document.createElement("div");
         const time = document.createElement("strong"); time.textContent = row.time;
         const tags = document.createElement("div"); tags.style.marginTop = "5px";
-        if (row.pb) { const pb = document.createElement("span"); pb.className = "pb-tag"; pb.textContent = "PERSONAL BEST"; tags.appendChild(pb); }
-        if (row.medal) { const medal = document.createElement("span"); medal.style.marginLeft = row.pb ? "6px" : "0"; medal.style.fontSize = "13px"; medal.style.fontWeight = "700"; medal.textContent = "🏅 " + ordinal(row.placing || 1); tags.appendChild(medal); }
+        if (row.medal) { const medal = document.createElement("span"); medal.style.fontSize = "13px"; medal.style.fontWeight = "700"; medal.textContent = "🏅 " + ordinal(row.placing || 1); tags.appendChild(medal); }
         timeBlock.append(time, tags);
         const course = document.createElement("span"); course.className = "muted"; course.textContent = row.type;
         summary.append(timeBlock, course);
@@ -936,6 +940,7 @@
     document.getElementById("eventBackHome").addEventListener("click", showHome);
     document.getElementById("resultsBackHome").addEventListener("click", showHome);
     document.getElementById("historyBackHome").addEventListener("click", showHome);
+    document.getElementById("historyCourse").addEventListener("change", renderHistory);
     document.getElementById("historyStroke").addEventListener("change", renderHistory);
     document.getElementById("historyDistance").addEventListener("change", renderHistory);
     document.getElementById("addEvent").addEventListener("click", () => openEventForm());
