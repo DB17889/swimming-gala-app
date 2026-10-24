@@ -33,6 +33,9 @@
     .gala-card p { margin: 4px 0; }
     .event-card { border: 1px solid #dbe3ed; border-radius: 12px; padding: 15px; margin-top: 12px; }
     .event-card h3 { margin: 0 0 7px; }
+    .result-summary { background: #f8fafc; border-radius: 10px; padding: 12px; margin-top: 10px; }
+    .checkbox-row { display: flex; align-items: center; gap: 10px; margin: 4px 0 14px; }
+    .checkbox-row input { width: 20px; min-height: 20px; margin: 0; }
     .section-heading { margin: 22px 0 8px; }
     .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
     .actions button { flex: 1 1 110px; }
@@ -158,6 +161,44 @@
         <button id="eventBackHome" class="secondary" type="button" style="margin-top:18px">Back to home</button>
       </section>
 
+      <section id="resultsPage" class="panel" hidden>
+        <h2 style="margin-top:0">Enter Results</h2>
+        <p class="muted">Record one swimmer’s time for each planned event. Results are saved with the gala.</p>
+        <label for="resultsGalaSelect">Gala</label>
+        <select id="resultsGalaSelect"><option value="">Choose a gala</option></select>
+        <div id="resultsWorkspace" hidden>
+          <p id="resultsGalaDetails" class="muted"></p>
+          <label for="swimmerName">Swimmer name</label>
+          <input id="swimmerName" maxlength="120" placeholder="Enter swimmer's name" autocomplete="name">
+          <label for="resultsEventSelect">Event</label>
+          <select id="resultsEventSelect"><option value="">Choose an event</option></select>
+          <form id="resultForm" hidden>
+            <div class="form-grid">
+              <div class="full">
+                <label for="resultTime">Time (mm:ss.nn)</label>
+                <input id="resultTime" inputmode="decimal" required pattern="[0-9]{1,2}:[0-5][0-9]\.[0-9]{2}" placeholder="e.g. 01:12.45" aria-describedby="timeHelp">
+                <p id="timeHelp" class="muted">Format example: 01:12.45 (minutes:seconds.hundredths)</p>
+              </div>
+            </div>
+            <label class="checkbox-row"><input id="resultPB" type="checkbox"> Personal best (PB)</label>
+            <label class="checkbox-row"><input id="resultMedal" type="checkbox"> Won a medal</label>
+            <div id="placingWrap" hidden>
+              <label for="resultPlacing">Place</label>
+              <select id="resultPlacing">
+                <option value="1">1st</option><option value="2">2nd</option><option value="3">3rd</option>
+              </select>
+            </div>
+            <button class="primary" id="saveResult" type="submit">Save result</button>
+            <button class="secondary danger" id="deleteResult" type="button" hidden style="width:100%;margin-top:8px">Delete result</button>
+            <p id="resultFormStatus" class="status" role="status"></p>
+          </form>
+          <h3 class="section-heading">Results for this gala</h3>
+          <div id="resultsList" aria-live="polite"></div>
+          <p id="resultsStatus" class="status" role="status"></p>
+        </div>
+        <button id="resultsBackHome" class="secondary" type="button" style="margin-top:18px">Back to home</button>
+      </section>
+
       <section id="placeholderPage" class="panel" hidden>
         <h2 id="pageTitle" style="margin-top:0"></h2>
         <p id="pageMessage"></p>
@@ -184,6 +225,11 @@
     const galaPage = document.getElementById("galaPage");
     const placeholderPage = document.getElementById("placeholderPage");
     const eventPage = document.getElementById("eventPage");
+    const resultsPage = document.getElementById("resultsPage");
+    const resultsGalaSelect = document.getElementById("resultsGalaSelect");
+    const resultsEventSelect = document.getElementById("resultsEventSelect");
+    const resultsWorkspace = document.getElementById("resultsWorkspace");
+    const resultForm = document.getElementById("resultForm");
     const eventWorkspace = document.getElementById("eventWorkspace");
     const eventGalaSelect = document.getElementById("eventGalaSelect");
     const eventFormWrap = document.getElementById("eventFormWrap");
@@ -541,15 +587,165 @@
       }
     }
 
+    function selectedResultsGala() {
+      return galaData && galaData.galas.find(gala => gala.id === resultsGalaSelect.value);
+    }
+
+    function selectedResultsEvent() {
+      const gala = selectedResultsGala();
+      return gala && Array.isArray(gala.events) ? gala.events.find(event => event.id === resultsEventSelect.value) : null;
+    }
+
+    function refreshResultsGalaOptions(keepSelection = true) {
+      const previous = keepSelection ? resultsGalaSelect.value : "";
+      resultsGalaSelect.replaceChildren();
+      const first = document.createElement("option");
+      first.value = "";
+      first.textContent = galaData && galaData.galas.length ? "Choose a gala" : "Add a gala first";
+      resultsGalaSelect.appendChild(first);
+      if (galaData) [...galaData.galas].sort((a,b) => (b.date || "").localeCompare(a.date || "")).forEach(gala => {
+        const option = document.createElement("option");
+        option.value = gala.id;
+        option.textContent = (gala.name || "Untitled gala") + " — " + formatDate(gala.date);
+        resultsGalaSelect.appendChild(option);
+      });
+      if (previous && galaData && galaData.galas.some(gala => gala.id === previous)) resultsGalaSelect.value = previous;
+      updateResultsWorkspace();
+    }
+
+    function updateResultsWorkspace() {
+      const gala = selectedResultsGala();
+      resultsWorkspace.hidden = !gala;
+      resultForm.hidden = true;
+      resultsEventSelect.replaceChildren();
+      const first = document.createElement("option");
+      first.value = "";
+      first.textContent = gala ? ((gala.events || []).length ? "Choose an event" : "Plan events for this gala first") : "Choose a gala first";
+      resultsEventSelect.appendChild(first);
+      if (!gala) return;
+      document.getElementById("resultsGalaDetails").textContent = formatDate(gala.date) + " · " + (gala.type || "Pool type not set") + " · " + (gala.venue || "Venue not set");
+      if (galaData.swimmerName) document.getElementById("swimmerName").value = galaData.swimmerName;
+      [...(Array.isArray(gala.events) ? gala.events : [])].sort((a,b) => Number(a.distance)-Number(b.distance) || String(a.stroke).localeCompare(String(b.stroke))).forEach(event => {
+        const option = document.createElement("option");
+        option.value = event.id;
+        option.textContent = event.distance + "m " + event.stroke + (event.result ? " ✓" : "");
+        resultsEventSelect.appendChild(option);
+      });
+      renderResults();
+    }
+
+    function renderResults() {
+      const gala = selectedResultsGala();
+      const list = document.getElementById("resultsList");
+      list.replaceChildren();
+      if (!gala) return;
+      const events = Array.isArray(gala.events) ? gala.events : [];
+      const withResults = events.filter(event => event.result);
+      if (!withResults.length) {
+        const empty = document.createElement("p");
+        empty.className = "muted";
+        empty.textContent = "No results entered for this gala yet.";
+        list.appendChild(empty);
+        return;
+      }
+      [...withResults].sort((a,b) => Number(a.distance)-Number(b.distance) || String(a.stroke).localeCompare(String(b.stroke))).forEach(event => {
+        const result = event.result;
+        const card = document.createElement("article");
+        card.className = "event-card";
+        const heading = document.createElement("h3");
+        heading.textContent = event.distance + "m " + event.stroke;
+        const details = document.createElement("p");
+        details.className = "result-summary";
+        details.textContent = (result.swimmerName || galaData.swimmerName || "Swimmer") + " · " + result.time + (result.pb ? " · PB" : "") + (result.medal ? " · Medal — " + ordinal(Number(result.placing)) : "");
+        const edit = document.createElement("button");
+        edit.type = "button"; edit.className = "secondary"; edit.textContent = "Edit result";
+        edit.addEventListener("click", () => { resultsEventSelect.value = event.id; loadSelectedResult(); document.getElementById("resultTime").scrollIntoView({behavior:"smooth",block:"center"}); });
+        card.append(heading, details, edit);
+        list.appendChild(card);
+      });
+    }
+
+    function ordinal(value) { return value === 1 ? "1st" : value === 2 ? "2nd" : value === 3 ? "3rd" : String(value) + "th"; }
+
+    function loadSelectedResult() {
+      const event = selectedResultsEvent();
+      resultForm.hidden = !event;
+      setStatus(document.getElementById("resultFormStatus"), "");
+      if (!event) return;
+      const result = event.result || {};
+      document.getElementById("resultTime").value = result.time || "";
+      document.getElementById("resultPB").checked = Boolean(result.pb);
+      document.getElementById("resultMedal").checked = Boolean(result.medal);
+      document.getElementById("resultPlacing").value = String(result.placing || 1);
+      document.getElementById("placingWrap").hidden = !result.medal;
+      document.getElementById("saveResult").textContent = result.time ? "Save changes" : "Save result";
+      document.getElementById("deleteResult").hidden = !result.time;
+    }
+
+    async function saveResult() {
+      const gala = selectedResultsGala();
+      const event = selectedResultsEvent();
+      if (!gala || !event || !galaData) return;
+      const swimmerName = document.getElementById("swimmerName").value.trim();
+      const time = document.getElementById("resultTime").value.trim();
+      const medal = document.getElementById("resultMedal").checked;
+      const placing = medal ? Number(document.getElementById("resultPlacing").value) : null;
+      if (!swimmerName) { setStatus(document.getElementById("resultFormStatus"), "Enter the swimmer’s name.", "error"); return; }
+      if (!/^[0-9]{1,2}:[0-5][0-9]\.[0-9]{2}$/.test(time)) { setStatus(document.getElementById("resultFormStatus"), "Enter the time as mm:ss.nn, for example 01:12.45.", "error"); return; }
+      const previous = event.result;
+      const previousName = galaData.swimmerName;
+      galaData.swimmerName = swimmerName;
+      event.result = { swimmerName, time, pb: document.getElementById("resultPB").checked, medal, placing };
+      const button = document.getElementById("saveResult");
+      button.disabled = true;
+      setStatus(document.getElementById("resultFormStatus"), "Saving result to your private GitHub data…");
+      try {
+        await apiRequest("PUT", galaData);
+        setStatus(document.getElementById("resultFormStatus"), "Result saved successfully.", "success");
+        setStatus(document.getElementById("resultsStatus"), "Result saved.", "success");
+        refreshResultsGalaOptions(true);
+        resultsEventSelect.value = event.id;
+        loadSelectedResult();
+        renderResults();
+      } catch (error) {
+        if (previous) event.result = previous; else delete event.result;
+        if (previousName === undefined) delete galaData.swimmerName; else galaData.swimmerName = previousName;
+        setStatus(document.getElementById("resultFormStatus"), "Could not save: " + error.message + ". Please try again.", "error");
+      } finally { button.disabled = false; }
+    }
+
+    async function deleteSelectedResult() {
+      const gala = selectedResultsGala();
+      const event = selectedResultsEvent();
+      if (!gala || !event || !event.result) return;
+      if (!window.confirm("Delete the result for " + event.distance + "m " + event.stroke + "?")) return;
+      const previous = event.result;
+      delete event.result;
+      try {
+        await apiRequest("PUT", galaData);
+        resultForm.reset();
+        resultForm.hidden = true;
+        setStatus(document.getElementById("resultsStatus"), "Result deleted and changes saved.", "success");
+        refreshResultsGalaOptions(true);
+      } catch (error) {
+        event.result = previous;
+        setStatus(document.getElementById("resultsStatus"), "Could not delete result: " + error.message, "error");
+        loadSelectedResult();
+      }
+    }
+
     function showHome() {
       document.getElementById("homeMenu").hidden = false;
       galaPage.hidden = true;
       eventPage.hidden = true;
+      resultsPage.hidden = true;
       placeholderPage.hidden = true;
       closeGalaForm();
       closeEventForm();
       setStatus(document.getElementById("galaStatus"), "");
       setStatus(document.getElementById("eventStatus"), "");
+      setStatus(document.getElementById("resultsStatus"), "");
+      setStatus(document.getElementById("resultFormStatus"), "");
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
@@ -591,9 +787,17 @@
           eventPage.hidden = false;
           refreshGalaOptions(true);
           eventPage.scrollIntoView({ behavior: "smooth", block: "start" });
+        } else if (page === "Enter Results") {
+          galaPage.hidden = true;
+          eventPage.hidden = true;
+          placeholderPage.hidden = true;
+          resultsPage.hidden = false;
+          refreshResultsGalaOptions(true);
+          resultsPage.scrollIntoView({ behavior: "smooth", block: "start" });
         } else {
           galaPage.hidden = true;
           eventPage.hidden = true;
+          resultsPage.hidden = true;
           document.getElementById("pageTitle").textContent = page;
           document.getElementById("pageMessage").textContent = page + " will be built next. Your data connection is working.";
           placeholderPage.hidden = false;
@@ -606,8 +810,16 @@
     document.getElementById("backHome").addEventListener("click", showHome);
     document.getElementById("back").addEventListener("click", showHome);
     document.getElementById("eventBackHome").addEventListener("click", showHome);
+    document.getElementById("resultsBackHome").addEventListener("click", showHome);
     document.getElementById("addEvent").addEventListener("click", () => openEventForm());
     document.getElementById("cancelEvent").addEventListener("click", closeEventForm);
+    resultsGalaSelect.addEventListener("change", updateResultsWorkspace);
+    resultsEventSelect.addEventListener("change", loadSelectedResult);
+    document.getElementById("resultMedal").addEventListener("change", event => {
+      document.getElementById("placingWrap").hidden = !event.target.checked;
+    });
+    resultForm.addEventListener("submit", event => { event.preventDefault(); saveResult(); });
+    document.getElementById("deleteResult").addEventListener("click", deleteSelectedResult);
     eventGalaSelect.addEventListener("change", () => {
       closeEventForm();
       setStatus(document.getElementById("eventStatus"), "");
