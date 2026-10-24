@@ -156,6 +156,11 @@
                     <option value="800">800m</option>
                   </select>
                 </div>
+                <div class="full">
+                  <label for="eventDate">Event date</label>
+                  <input id="eventDate" type="date" required>
+                  <p class="muted">Defaults to the gala date, but you can change it for this event.</p>
+                </div>
               </div>
               <button class="primary" id="saveEvent" type="submit">Save event</button>
               <button class="secondary" id="cancelEvent" type="button" style="width:100%;margin-top:8px">Cancel</button>
@@ -178,6 +183,7 @@
           <p id="resultsGalaDetails" class="muted"></p>
           <label for="resultsEventSelect">Event</label>
           <select id="resultsEventSelect"><option value="">Choose an event</option></select>
+          <p id="resultsEventDate" class="muted"></p>
           <form id="resultForm" hidden>
             <div class="form-grid">
               <div class="full">
@@ -524,7 +530,7 @@
         title.textContent = (event.distance || "?") + "m " + (event.stroke || "Event");
         const details = document.createElement("p");
         details.className = "muted";
-        details.textContent = "Planned for " + (gala.name || "this gala");
+        details.textContent = "Event date: " + formatDate(event.date || gala.date) + " · Planned for " + (gala.name || "this gala");
         const actions = document.createElement("div");
         actions.className = "actions";
         const edit = document.createElement("button");
@@ -559,6 +565,7 @@
           document.getElementById("eventDistance").value = String(existing.distance);
         }
       }
+      document.getElementById("eventDate").value = (existing && existing.date) || gala.date || "";
       eventFormWrap.hidden = false;
       document.getElementById("eventFormHeading").scrollIntoView({ behavior: "smooth", block: "start" });
     }
@@ -602,7 +609,12 @@
         setStatus(document.getElementById("eventFormStatus"), "That event is already planned for this gala.", "error");
         return;
       }
-      const plannedEvent = { id: editingEventId || makeId(), stroke, distance };
+      const date = document.getElementById("eventDate").value;
+      if (!date) {
+        setStatus(document.getElementById("eventFormStatus"), "Choose an event date.", "error");
+        return;
+      }
+      const plannedEvent = { id: editingEventId || makeId(), stroke, distance, date };
       if (editingEventId) {
         const index = gala.events.findIndex(item => item.id === editingEventId);
         if (index !== -1) gala.events[index] = { ...gala.events[index], ...plannedEvent };
@@ -666,12 +678,12 @@
       first.value = "";
       first.textContent = gala ? ((gala.events || []).length ? "Choose an event" : "Plan events for this gala first") : "Choose a gala first";
       resultsEventSelect.appendChild(first);
-      if (!gala) return;
+      if (!gala) { document.getElementById("resultsEventDate").textContent = ""; return; }
       document.getElementById("resultsGalaDetails").textContent = formatDate(gala.date) + " · " + (gala.type || "Pool type not set") + " · " + (gala.venue || "Venue not set");
       [...(Array.isArray(gala.events) ? gala.events : [])].sort((a,b) => Number(a.distance)-Number(b.distance) || String(a.stroke).localeCompare(String(b.stroke))).forEach(event => {
         const option = document.createElement("option");
         option.value = event.id;
-        option.textContent = event.distance + "m " + event.stroke + (event.result ? " ✓" : "");
+        option.textContent = event.distance + "m " + event.stroke + " — " + formatDate(event.date || gala.date) + (event.result ? " ✓" : "");
         resultsEventSelect.appendChild(option);
       });
       renderResults();
@@ -697,13 +709,16 @@
         card.className = "event-card";
         const heading = document.createElement("h3");
         heading.textContent = event.distance + "m " + event.stroke;
+        const eventDate = document.createElement("p");
+        eventDate.className = "muted";
+        eventDate.textContent = "Event date: " + formatDate(event.date || gala.date);
         const details = document.createElement("p");
         details.className = "result-summary";
         details.textContent = result.time + (result.medal ? " · Medal — " + ordinal(Number(result.placing)) : "");
         const edit = document.createElement("button");
         edit.type = "button"; edit.className = "secondary"; edit.textContent = "Edit result";
         edit.addEventListener("click", () => { resultsEventSelect.value = event.id; loadSelectedResult(); document.getElementById("resultTime").scrollIntoView({behavior:"smooth",block:"center"}); });
-        card.append(heading, details, edit);
+        card.append(heading, eventDate, details, edit);
         list.appendChild(card);
       });
     }
@@ -713,6 +728,8 @@
     function loadSelectedResult() {
       const event = selectedResultsEvent();
       resultForm.hidden = !event;
+      const gala = selectedResultsGala();
+      document.getElementById("resultsEventDate").textContent = event && gala ? "Event date: " + formatDate(event.date || gala.date) : "";
       setStatus(document.getElementById("resultFormStatus"), "");
       if (!event) return;
       const result = event.result || {};
@@ -780,7 +797,7 @@
           rows.push({
             galaId: gala.id,
             galaName: gala.name || "Untitled gala",
-            date: gala.date || "",
+            date: event.date || gala.date || "",
             venue: gala.venue || "",
             type: gala.type || "",
             eventId: event.id,
