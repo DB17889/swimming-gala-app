@@ -8,7 +8,9 @@
   <style>
     * { box-sizing: border-box; }
     body { margin: 0; font-family: system-ui, sans-serif; background: #f5f5f5; color: #171717; }
-    header { background: #C8102E; color: white; padding: 24px 20px; border-bottom: 5px solid #171717; }
+    header { background: #C8102E; color: white; padding: 16px 20px; border-bottom: 5px solid #171717; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .header-copy { min-width:0; }
+    .header-home { flex:0 0 auto; width:auto; min-height:42px; padding:8px 12px; border:1px solid rgba(255,255,255,.7); border-radius:8px; background:transparent; color:#fff; font-weight:700; }
     header h1 { margin: 0 0 5px; font-size: 24px; }
     header p { margin: 0; color: #ffffff; }
     main { max-width: 760px; margin: auto; padding: 22px 16px; }
@@ -33,6 +35,19 @@
     .success { color: #166534; }
     .history-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
     .history-stat { background: #fff1f2; border: 1px solid #f3c6cd; border-radius: 10px; padding: 12px; margin-top: 10px; }
+    .history-stat.pb-highlight { background:#fff8db; border-color:#e6bd45; }
+    .course-toggle { display:flex; gap:8px; margin:8px 0 16px; }
+    .course-toggle button { flex:1; }
+    .course-toggle button.active { background:#C8102E; color:white; border-color:#C8102E; }
+    .year-chooser { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0; }
+    .year-chooser button { width:auto; min-width:76px; }
+    .year-chooser button.active { background:#C8102E; color:#fff; border-color:#C8102E; }
+    .modal-backdrop { position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,.58); padding:16px; display:flex; align-items:center; justify-content:center; overflow:auto; }
+    .modal-card { width:min(100%,560px); max-height:calc(100dvh - 32px); overflow:auto; background:white; border-radius:14px; padding:20px; box-shadow:0 16px 50px rgba(0,0,0,.25); }
+    .modal-card hr { border:0; border-top:1px solid #dedede; margin:16px 0; }
+    .detail-settings { background:#fff; border:1px solid #dedede; border-radius:10px; padding:15px; margin:14px 0 20px; }
+    .event-card.completed { border-left-color:#166534; }
+    .small-button { width:auto; }
     .history-stat strong { display: block; font-size: 20px; color: #C8102E; }
     .history-row { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; }
     .pb-tag { display: inline-block; background: #171717; color: #fff; border-radius: 4px; padding: 3px 6px; font-size: 12px; font-weight: 700; }
@@ -51,13 +66,13 @@
     .full { grid-column: 1 / -1; }
     footer { text-align: center; padding: 24px; color: #64748b; font-size: 13px; }
     [hidden] { display: none !important; }
-    @media (max-width: 420px) { .menu, .form-grid { grid-template-columns: 1fr; } .full { grid-column: auto; } header h1 { font-size: 21px; } }
+    @media (max-width: 420px) { .menu, .form-grid { grid-template-columns: 1fr; } .full { grid-column: auto; } header h1 { font-size: 20px; } header p {font-size:13px;} .header-home {padding:8px; font-size:14px;} .history-controls {grid-template-columns:1fr 1fr;} .modal-card {padding:16px;} }
   </style>
 </head>
 <body>
   <header>
-    <h1>Swimming Gala Tracker</h1>
-    <p>Gala results, personal bests and medals</p>
+    <div class="header-copy"><h1>Swimming Gala Tracker</h1><p>Gala results, personal bests and medals</p></div>
+    <button id="headerHome" class="header-home" type="button" hidden>⌂ Home</button>
   </header>
   <main>
     <section id="login" class="panel">
@@ -73,112 +88,90 @@
 
     <section id="app" hidden>
       <section class="panel">
-        <h2 style="margin-top:0">Home</h2>
-        <p>What would you like to do?</p>
         <div id="connection" class="status" role="status">Checking data connection…</div>
         <button id="retry" class="secondary" type="button" hidden>Retry connection</button>
       </section>
       <div class="menu" id="homeMenu">
-        <button class="tile" data-page="Galas"><strong>🏊 Galas</strong><span>Add and manage competitions</span></button>
-        <button class="tile" data-page="Plan Events"><strong>📋 Plan Events</strong><span>Set up events in advance</span></button>
-        <button class="tile" data-page="Enter Results"><strong>⏱️ Enter Results</strong><span>Record times, PBs and medals</span></button>
+        <button class="tile" data-page="Galas"><strong>🏊 Galas</strong><span>Manage competitions and events</span></button>
+        <button class="tile" data-page="Enter Results"><strong>⏱️ Enter Results</strong><span>Quickly record outstanding times</span></button>
         <button class="tile" data-page="Results History"><strong>📈 Results History</strong><span>Review galas and compare times</span></button>
       </div>
 
       <section id="galaPage" class="panel" hidden>
-        <h2 id="galaPageHeading" style="margin-top:0">Galas</h2>
-        <p class="muted">Add each competition here. You can edit or delete it later.</p>
+        <h2 style="margin-top:0">Galas</h2>
+        <p class="muted">Choose a year to view its galas. The newest years appear first.</p>
         <button id="addGala" class="primary" type="button">＋ Add a gala</button>
-        <div id="galaFormWrap" hidden>
-          <hr style="border:0;border-top:1px solid #dbe3ed;margin:20px 0">
-          <h3 id="galaFormHeading">New gala</h3>
-          <form id="galaForm">
-            <div class="form-grid">
-              <div class="full">
-                <label for="galaName">Gala name</label>
-                <input id="galaName" name="name" required maxlength="120" placeholder="e.g. County Championships">
+        <div id="galaFormWrap" class="modal-backdrop" hidden>
+          <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="galaFormHeading">
+            <h3 id="galaFormHeading" style="margin-top:0">New gala</h3>
+            <form id="galaForm">
+              <div class="form-grid">
+                <div class="full"><label for="galaName">Gala name</label><input id="galaName" name="name" required maxlength="120" placeholder="e.g. County Championships"></div>
+                <div><label for="galaDate">Date</label><input id="galaDate" name="date" type="date" required></div>
+                <div><label for="galaType">Pool type</label><select id="galaType" name="type" required><option value="Short Course">Short Course</option><option value="Long Course">Long Course</option></select></div>
+                <div class="full"><label for="galaVenue">Venue</label><input id="galaVenue" name="venue" required maxlength="160" placeholder="Pool or leisure centre"></div>
               </div>
-              <div>
-                <label for="galaDate">Date</label>
-                <input id="galaDate" name="date" type="date" required>
-              </div>
-              <div>
-                <label for="galaType">Pool type</label>
-                <select id="galaType" name="type" required>
-                  <option value="Short Course">Short Course</option>
-                  <option value="Long Course">Long Course</option>
-                </select>
-              </div>
-              <div class="full">
-                <label for="galaVenue">Venue</label>
-                <input id="galaVenue" name="venue" required maxlength="160" placeholder="Pool or leisure centre">
-              </div>
-            </div>
-            <button class="primary" id="saveGala" type="submit">Save gala</button>
-            <button class="secondary" id="cancelGala" type="button" style="width:100%;margin-top:8px">Cancel</button>
-            <p id="galaFormStatus" class="status" role="status"></p>
-          </form>
+              <button class="primary" id="saveGala" type="submit">Save gala</button>
+              <button class="secondary" id="cancelGala" type="button" style="width:100%;margin-top:8px">Cancel</button>
+              <p id="galaFormStatus" class="status" role="status"></p>
+            </form>
+          </div>
         </div>
+        <div id="galaYears" class="year-chooser" aria-label="Choose gala year"></div>
+        <h3 id="galaYearHeading" class="section-heading" hidden></h3>
         <div id="galaList" aria-live="polite"></div>
         <p id="galaStatus" class="status" role="status"></p>
-        <button id="backHome" class="secondary" type="button" style="margin-top:18px">Back to home</button>
       </section>
 
       <section id="eventPage" class="panel" hidden>
-        <h2 style="margin-top:0">Plan Events</h2>
-        <p class="muted">Choose a gala, then add the events that will take place at that competition.</p>
-        <label for="eventGalaSelect">Gala</label>
-        <select id="eventGalaSelect"><option value="">Choose a gala</option></select>
-        <div id="eventWorkspace" hidden>
-          <p id="eventGalaDetails" class="muted"></p>
-          <button id="addEvent" class="primary" type="button">＋ Add an event</button>
-          <div id="eventFormWrap" hidden>
-            <hr style="border:0;border-top:1px solid #dbe3ed;margin:20px 0">
-            <h3 id="eventFormHeading">New event</h3>
-            <form id="eventForm">
-              <div class="form-grid">
-                <div>
-                  <label for="eventStroke">Stroke</label>
-                  <select id="eventStroke" required>
-                    <option value="Freestyle">Freestyle</option>
-                    <option value="Backstroke">Backstroke</option>
-                    <option value="Breaststroke">Breaststroke</option>
-                    <option value="Butterfly">Butterfly</option>
-                    <option value="IM">Individual Medley (IM)</option>
-                  </select>
-                </div>
-                <div>
-                  <label for="eventDistance">Distance</label>
-                  <select id="eventDistance" required>
-                    <option value="50">50m</option>
-                    <option value="100">100m</option>
-                    <option value="200">200m</option>
-                    <option value="400">400m</option>
-                    <option value="800">800m</option>
-                  </select>
-                </div>
-                <div class="full">
-                  <label for="eventDate">Event date</label>
-                  <input id="eventDate" type="date" required>
-                  <p class="muted">Defaults to the gala date, but you can change it for this event.</p>
-                </div>
-              </div>
-              <button class="primary" id="saveEvent" type="submit">Save event</button>
-              <button class="secondary" id="cancelEvent" type="button" style="width:100%;margin-top:8px">Cancel</button>
-              <p id="eventFormStatus" class="status" role="status"></p>
-            </form>
+        <button id="detailBackGalas" class="secondary small-button" type="button">← Back to Galas</button>
+        <h2 id="detailHeading" style="margin-top:16px">Gala details</h2>
+        <form id="detailGalaForm" class="detail-settings">
+          <h3 style="margin-top:0">Gala settings</h3>
+          <div class="form-grid">
+            <div class="full"><label for="detailGalaName">Gala name</label><input id="detailGalaName" required maxlength="120"></div>
+            <div><label for="detailGalaDate">Gala date</label><input id="detailGalaDate" type="date" required></div>
+            <div><label for="detailGalaType">Pool type</label><select id="detailGalaType" required><option value="Short Course">Short Course</option><option value="Long Course">Long Course</option></select></div>
+            <div class="full"><label for="detailGalaVenue">Venue</label><input id="detailGalaVenue" required maxlength="160"></div>
           </div>
-          <h3 class="section-heading">Planned events</h3>
-          <div id="eventList" aria-live="polite"></div>
-          <p id="eventStatus" class="status" role="status"></p>
+          <button id="saveDetailGala" class="primary" type="submit">Save gala settings</button>
+          <p id="detailGalaStatus" class="status" role="status"></p>
+        </form>
+        <h3>New Event</h3>
+        <button id="addEvent" class="primary" type="button">＋ Add an event</button>
+        <div id="eventFormWrap" hidden>
+          <hr style="border:0;border-top:1px solid #dedede;margin:20px 0">
+          <h3 id="eventFormHeading">New event</h3>
+          <form id="eventForm">
+            <div class="form-grid">
+              <div><label for="eventStroke">Stroke</label><select id="eventStroke" required><option value="Freestyle">Freestyle</option><option value="Backstroke">Backstroke</option><option value="Breaststroke">Breaststroke</option><option value="Butterfly">Butterfly</option><option value="IM">Individual Medley (IM)</option></select></div>
+              <div><label for="eventDistance">Distance</label><select id="eventDistance" required></select></div>
+              <div class="full"><label for="eventDate">Event date</label><input id="eventDate" type="date" required><p class="muted">Defaults to the gala date, but you can change it for this event.</p></div>
+            </div>
+            <button class="primary" id="saveEvent" type="submit">Save event</button>
+            <button class="secondary" id="cancelEvent" type="button" style="width:100%;margin-top:8px">Cancel</button>
+            <p id="eventFormStatus" class="status" role="status"></p>
+          </form>
         </div>
-        <button id="eventBackHome" class="secondary" type="button" style="margin-top:18px">Back to home</button>
+        <h3 class="section-heading">Planned events</h3>
+        <div id="eventList" aria-live="polite"></div>
+        <p id="eventStatus" class="status" role="status"></p>
+        <h3 class="section-heading">Completed events</h3>
+        <p class="muted">Events with a recorded time appear here. Select Edit result to correct a time, medal or placing.</p>
+        <div id="completedEventList" aria-live="polite"></div>
+        <div id="resultEditWrap" class="modal-backdrop" hidden><div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="resultEditHeading">
+          <h3 id="resultEditHeading" style="margin-top:0">Edit result</h3><form id="resultEditForm">
+            <label for="editResultTime">Time (mm:ss.nn)</label><input id="editResultTime" type="text" inputmode="text" autocomplete="off" required pattern="[0-9]{1,2}:[0-5][0-9]\.[0-9]{2}" placeholder="e.g. 01:12.45">
+            <label class="checkbox-row"><input id="editResultMedal" type="checkbox"> Won a medal</label>
+            <div id="editPlacingWrap" hidden><label for="editResultPlacing">Place</label><select id="editResultPlacing"><option value="1">1st</option><option value="2">2nd</option><option value="3">3rd</option><option value="4">4th</option><option value="5">5th</option><option value="6">6th</option></select></div>
+            <button id="saveEditedResult" class="primary" type="submit">Save result changes</button><button id="cancelEditedResult" class="secondary" type="button" style="width:100%;margin-top:8px">Cancel</button><p id="editResultStatus" class="status" role="status"></p>
+          </form></div></div>
       </section>
 
       <section id="resultsPage" class="panel" hidden>
         <h2 style="margin-top:0">Enter Results</h2>
-        <p class="muted">Record one swimmer’s time for each planned event. Results are saved with the gala.</p>
-        <label for="resultsGalaSelect">Gala</label>
+        <p class="muted">Quick entry for events that don't yet have a recorded time. Edit completed results from the gala page.</p>
+        <label for="resultsGalaSelect">Gala with outstanding events</label>
         <select id="resultsGalaSelect"><option value="">Choose a gala</option></select>
         <div id="resultsWorkspace" hidden>
           <p id="resultsGalaDetails" class="muted"></p>
@@ -186,68 +179,31 @@
           <select id="resultsEventSelect"><option value="">Choose an event</option></select>
           <p id="resultsEventDate" class="muted"></p>
           <form id="resultForm" hidden>
-            <div class="form-grid">
-              <div class="full">
-                <label for="resultTime">Time (mm:ss.nn)</label>
-                <input id="resultTime" inputmode="decimal" required pattern="[0-9]{1,2}:[0-5][0-9]\.[0-9]{2}" placeholder="e.g. 01:12.45" aria-describedby="timeHelp">
-                <p id="timeHelp" class="muted">Format example: 01:12.45 (minutes:seconds.hundredths)</p>
-              </div>
-            </div>
+            <div><label for="resultTime">Time (mm:ss.nn)</label><input id="resultTime" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" required pattern="[0-9]{1,2}:[0-5][0-9]\.[0-9]{2}" placeholder="e.g. 01:12.45" aria-describedby="timeHelp"><p id="timeHelp" class="muted">Use minutes:seconds.hundredths, e.g. 01:12.45. The text keyboard is used so you can enter the colon.</p></div>
             <label class="checkbox-row"><input id="resultMedal" type="checkbox"> Won a medal</label>
-            <div id="placingWrap" hidden>
-              <label for="resultPlacing">Place</label>
-              <select id="resultPlacing">
-                <option value="1">1st</option><option value="2">2nd</option><option value="3">3rd</option>
-                <option value="4">4th</option><option value="5">5th</option><option value="6">6th</option>
-              </select>
-            </div>
+            <div id="placingWrap" hidden><label for="resultPlacing">Place</label><select id="resultPlacing"><option value="1">1st</option><option value="2">2nd</option><option value="3">3rd</option><option value="4">4th</option><option value="5">5th</option><option value="6">6th</option></select></div>
             <button class="primary" id="saveResult" type="submit">Save result</button>
-            <button class="secondary danger" id="deleteResult" type="button" hidden style="width:100%;margin-top:8px">Delete result</button>
             <p id="resultFormStatus" class="status" role="status"></p>
           </form>
-          <h3 class="section-heading">Results for this gala</h3>
-          <div id="resultsList" aria-live="polite"></div>
           <p id="resultsStatus" class="status" role="status"></p>
         </div>
-        <button id="resultsBackHome" class="secondary" type="button" style="margin-top:18px">Back to home</button>
       </section>
 
       <section id="historyPage" class="panel" hidden>
         <h2 style="margin-top:0">Results History</h2>
-        <p class="muted">Compare times for the same event across your saved galas and review personal bests.</p>
+        <p class="muted">Compare times across galas and track your personal bests.</p>
+        <div class="course-toggle" role="group" aria-label="Pool length">
+          <button id="historyShort" class="secondary active" type="button" aria-pressed="true">Short Course</button>
+          <button id="historyLong" class="secondary" type="button" aria-pressed="false">Long Course</button>
+        </div>
         <div class="history-controls">
-          <div>
-            <label for="historyCourse">Course</label>
-            <select id="historyCourse">
-              <option value="Short Course">Short Course</option>
-              <option value="Long Course">Long Course</option>
-            </select>
-          </div>
-          <div>
-            <label for="historyStroke">Stroke</label>
-            <select id="historyStroke">
-              <option value="">All strokes</option>
-              <option value="Freestyle">Freestyle</option>
-              <option value="Backstroke">Backstroke</option>
-              <option value="Breaststroke">Breaststroke</option>
-              <option value="Butterfly">Butterfly</option>
-              <option value="IM">Individual Medley (IM)</option>
-            </select>
-          </div>
-          <div>
-            <label for="historyDistance">Distance</label>
-            <select id="historyDistance">
-              <option value="">All distances</option>
-              <option value="25">25m</option><option value="50">50m</option><option value="100">100m</option>
-              <option value="200">200m</option><option value="400">400m</option><option value="800">800m</option>
-            </select>
-          </div>
+          <div><label for="historyStroke">Stroke</label><select id="historyStroke"><option value="">All strokes</option><option value="Freestyle">Freestyle</option><option value="Backstroke">Backstroke</option><option value="Breaststroke">Breaststroke</option><option value="Butterfly">Butterfly</option><option value="IM">Individual Medley (IM)</option></select></div>
+          <div><label for="historyDistance">Distance</label><select id="historyDistance"><option value="">All distances</option><option value="25">25m</option><option value="50">50m</option><option value="100">100m</option><option value="200">200m</option><option value="400">400m</option><option value="800">800m</option></select></div>
         </div>
         <div id="historyStats" class="history-controls"></div>
-        <h3 class="section-heading">Matching results</h3>
+        <h3 class="section-heading">Matching results (latest first)</h3>
         <div id="historyList" aria-live="polite"></div>
         <p id="historyStatus" class="status" role="status"></p>
-        <button id="historyBackHome" class="secondary" type="button" style="margin-top:18px">Back to home</button>
       </section>
 
       <section id="placeholderPage" class="panel" hidden>
@@ -262,728 +218,65 @@
 
   <script>
     const API = "https://swimming-gala-api.dan-belfield.workers.dev/api/data";
-    let appPin = "";
-    let galaData = null;
-    let editingGalaId = null;
-    let editingEventId = null;
+    let appPin = "", galaData = null, editingEventId = null, editingResultEventId = null, activeGalaId = null, selectedGalaYear = null, historyCourse = "Short Course";
+    const $ = id => document.getElementById(id);
+    const loginSection=$('login'), appSection=$('app'), loginForm=$('loginForm'), loginStatus=$('loginStatus'), connection=$('connection'), retryButton=$('retry');
+    const galaPage=$('galaPage'), eventPage=$('eventPage'), resultsPage=$('resultsPage'), historyPage=$('historyPage'), placeholderPage=$('placeholderPage');
+    const resultsGalaSelect=$('resultsGalaSelect'), resultsEventSelect=$('resultsEventSelect'), resultsWorkspace=$('resultsWorkspace'), resultForm=$('resultForm');
+    const eventFormWrap=$('eventFormWrap'), eventForm=$('eventForm'), galaFormWrap=$('galaFormWrap'), galaForm=$('galaForm');
+    const EVENT_STROKES=['Freestyle','Backstroke','Breaststroke','Butterfly','IM'];
+    const EVENT_DISTANCES=[25,50,100,200,400,800];
+    function setStatus(el,msg,type=''){el.textContent=msg;el.className='status '+type;}
+    async function apiRequest(method,data){const options={method,headers:{'X-App-Pin':appPin},cache:'no-store'};if(data!==undefined){options.headers['Content-Type']='application/json';options.body=JSON.stringify(data);}const response=await fetch(API,options);const result=await response.json();if(!response.ok)throw new Error(result.error||'Request failed ('+response.status+')');return result;}
+    async function requestData(){setStatus(connection,'Connecting to your private GitHub data…');retryButton.hidden=true;try{const result=await apiRequest('GET');if(!result||!Array.isArray(result.galas))throw new Error('The data file has an unexpected format.');galaData=result;setStatus(connection,'Connected successfully. '+galaData.galas.length+' gala(s) found in your data file.','success');renderGalas();refreshResultsGalaOptions(false);}catch(error){galaData=null;setStatus(connection,'Connection failed: '+error.message+'. Check your Worker URL, PIN secret and GitHub permissions.','error');retryButton.hidden=false;}}
+    function makeId(){return window.crypto&&typeof window.crypto.randomUUID==='function'?window.crypto.randomUUID():'gala-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10);}
+    function formatDate(dateString){if(!dateString)return 'Date not set';const date=new Date(dateString+'T12:00:00');return Number.isNaN(date.getTime())?dateString:date.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});}
+    function eventLabel(event,gala){return (event.stroke==='IM'?'IM':event.stroke||'Event')+' '+Number(event.distance||0)+'m - '+formatDate(event.date||gala.date);}
+    function sortedGalas(){return galaData?[...galaData.galas].sort((a,b)=>(b.date||'').localeCompare(a.date||'')):[];}
+    function showPage(page){$('homeMenu').hidden=true;galaPage.hidden=page!=='galas';eventPage.hidden=page!=='detail';resultsPage.hidden=page!=='results';historyPage.hidden=page!=='history';placeholderPage.hidden=true;$('headerHome').hidden=false;window.scrollTo({top:0,behavior:'smooth'});}
+    function showHome(){if(!galaData)return;$('homeMenu').hidden=false;galaPage.hidden=true;eventPage.hidden=true;resultsPage.hidden=true;historyPage.hidden=true;placeholderPage.hidden=true;$('headerHome').hidden=true;closeGalaForm();closeEventForm();setStatus($('galaStatus'),'');setStatus($('eventStatus'),'');setStatus($('resultsStatus'),'');setStatus($('resultFormStatus'),'');window.scrollTo({top:0,behavior:'smooth'});}
 
-    const loginSection = document.getElementById("login");
-    const appSection = document.getElementById("app");
-    const loginForm = document.getElementById("loginForm");
-    const loginStatus = document.getElementById("loginStatus");
-    const connection = document.getElementById("connection");
-    const retryButton = document.getElementById("retry");
-    const galaPage = document.getElementById("galaPage");
-    const placeholderPage = document.getElementById("placeholderPage");
-    const eventPage = document.getElementById("eventPage");
-    const resultsPage = document.getElementById("resultsPage");
-    const historyPage = document.getElementById("historyPage");
-    const resultsGalaSelect = document.getElementById("resultsGalaSelect");
-    const resultsEventSelect = document.getElementById("resultsEventSelect");
-    const resultsWorkspace = document.getElementById("resultsWorkspace");
-    const resultForm = document.getElementById("resultForm");
-    const eventWorkspace = document.getElementById("eventWorkspace");
-    const eventGalaSelect = document.getElementById("eventGalaSelect");
-    const eventFormWrap = document.getElementById("eventFormWrap");
-    const eventForm = document.getElementById("eventForm");
-    const galaFormWrap = document.getElementById("galaFormWrap");
-    const galaForm = document.getElementById("galaForm");
+    function renderGalas(){const list=$('galaList'), years=$('galaYears');list.replaceChildren();years.replaceChildren();const galas=sortedGalas();const yearSet=[...new Set(galas.map(g=>String((g.date||'').slice(0,4))).filter(y=>/^\d{4}$/.test(y)))].sort((a,b)=>b.localeCompare(a));if(!yearSet.length){selectedGalaYear=null;$('galaYearHeading').hidden=true;const empty=document.createElement('p');empty.className='muted';empty.textContent='No galas yet. Select “Add a gala” to create your first one.';list.appendChild(empty);return;}if(!yearSet.includes(String(selectedGalaYear)))selectedGalaYear=yearSet[0];yearSet.forEach(year=>{const button=document.createElement('button');button.type='button';button.className='secondary'+(year===String(selectedGalaYear)?' active':'');button.textContent=year;button.setAttribute('aria-pressed',String(year===String(selectedGalaYear)));button.addEventListener('click',()=>{selectedGalaYear=year;renderGalas();});years.appendChild(button);});$('galaYearHeading').hidden=false;$('galaYearHeading').textContent='Galas in '+selectedGalaYear;galas.filter(g=>String((g.date||'').slice(0,4))===String(selectedGalaYear)).forEach(gala=>{const card=document.createElement('article');card.className='gala-card';const title=document.createElement('h3');title.textContent=gala.name||'Untitled gala';const date=document.createElement('p');date.textContent='📅 '+formatDate(gala.date);const type=document.createElement('p');type.textContent='🏊 '+(gala.type||'Pool type not set');const venue=document.createElement('p');venue.textContent='📍 '+(gala.venue||'Venue not set');const actions=document.createElement('div');actions.className='actions';const edit=document.createElement('button');edit.type='button';edit.className='secondary';edit.textContent='Edit';edit.addEventListener('click',()=>openGalaDetail(gala.id));const remove=document.createElement('button');remove.type='button';remove.className='secondary danger';const hasEvents=Array.isArray(gala.events)&&gala.events.length>0;remove.textContent=hasEvents?'Delete unavailable':'Delete';remove.disabled=hasEvents;remove.title=hasEvents?'A gala with events cannot be deleted. Delete its events first.':'';remove.addEventListener('click',()=>deleteGala(gala.id));actions.append(edit,remove);if(hasEvents){const note=document.createElement('p');note.className='muted';note.textContent='This gala has events and cannot be deleted.';card.append(title,date,type,venue,actions,note);}else card.append(title,date,type,venue,actions);list.appendChild(card);});}
+    function openGalaForm(){galaForm.reset();$('galaFormHeading').textContent='New gala';$('saveGala').textContent='Save gala';setStatus($('galaFormStatus'),'');galaFormWrap.hidden=false;document.body.style.overflow='hidden';$('galaName').focus();}
+    function closeGalaForm(){galaFormWrap.hidden=true;galaForm.reset();document.body.style.overflow='';setStatus($('galaFormStatus'),'');}
+    async function saveGalaForm(e){e.preventDefault();if(!galaData)return;const gala={id:makeId(),name:$('galaName').value.trim(),date:$('galaDate').value,type:$('galaType').value,venue:$('galaVenue').value.trim(),events:[]};galaData.galas.push(gala);$('saveGala').disabled=true;setStatus($('galaFormStatus'),'Saving to your private GitHub data…');try{await apiRequest('PUT',galaData);closeGalaForm();selectedGalaYear=gala.date.slice(0,4);renderGalas();refreshResultsGalaOptions(false);setStatus($('galaStatus'),'Gala added and saved.','success');setStatus(connection,'Connected successfully. '+galaData.galas.length+' gala(s) found in your data file.','success');}catch(error){galaData.galas=galaData.galas.filter(g=>g.id!==gala.id);setStatus($('galaFormStatus'),'Could not save: '+error.message+'. Please try again.','error');}finally{$('saveGala').disabled=false;}}
+    async function deleteGala(id){const gala=galaData.galas.find(g=>g.id===id);if(!gala)return;if(Array.isArray(gala.events)&&gala.events.length){setStatus($('galaStatus'),'This gala cannot be deleted while it has events.','error');return;}if(!confirm('Delete “'+(gala.name||'this gala')+'”? This cannot be undone.'))return;const old=galaData.galas;galaData.galas=old.filter(g=>g.id!==id);try{await apiRequest('PUT',galaData);renderGalas();refreshResultsGalaOptions(false);setStatus($('galaStatus'),'Gala deleted and changes saved.','success');}catch(error){galaData.galas=old;renderGalas();setStatus($('galaStatus'),'Could not delete: '+error.message,'error');}}
 
-    function setStatus(element, message, type = "") {
-      element.textContent = message;
-      element.className = "status " + type;
-    }
+    function activeGala(){return galaData&&galaData.galas.find(g=>g.id===activeGalaId);}
+    function openGalaDetail(id){const gala=galaData.galas.find(g=>g.id===id);if(!gala)return;activeGalaId=id;showPage('detail');$('detailHeading').textContent=gala.name||'Gala details';$('detailGalaName').value=gala.name||'';$('detailGalaDate').value=gala.date||'';$('detailGalaType').value=gala.type||'Short Course';$('detailGalaVenue').value=gala.venue||'';setStatus($('detailGalaStatus'),'');closeEventForm();renderEvents();}
+    async function saveDetailGala(e){e.preventDefault();const gala=activeGala();if(!gala)return;const previous={name:gala.name,date:gala.date,type:gala.type,venue:gala.venue};Object.assign(gala,{name:$('detailGalaName').value.trim(),date:$('detailGalaDate').value,type:$('detailGalaType').value,venue:$('detailGalaVenue').value.trim()});$('saveDetailGala').disabled=true;setStatus($('detailGalaStatus'),'Saving gala settings…');try{await apiRequest('PUT',galaData);$('detailHeading').textContent=gala.name;selectedGalaYear=(gala.date||'').slice(0,4)||selectedGalaYear;setStatus($('detailGalaStatus'),'Gala settings saved.','success');renderEvents();renderGalas();refreshResultsGalaOptions(true);}catch(error){Object.assign(gala,previous);$('detailGalaName').value=gala.name;$('detailGalaDate').value=gala.date;$('detailGalaType').value=gala.type;$('detailGalaVenue').value=gala.venue;setStatus($('detailGalaStatus'),'Could not save: '+error.message,'error');}finally{$('saveDetailGala').disabled=false;}}
 
-    async function apiRequest(method, data) {
-      const options = {
-        method,
-        headers: { "X-App-Pin": appPin },
-        cache: "no-store"
-      };
-      if (data !== undefined) {
-        options.headers["Content-Type"] = "application/json";
-        options.body = JSON.stringify(data);
-      }
-      const response = await fetch(API, options);
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "Request failed (" + response.status + ")");
-      return result;
-    }
+    function allowedDistances(gala,stroke){let distances=EVENT_DISTANCES.filter(d=>d!==25||gala.type==='Short Course');if(stroke==='IM')distances=distances.filter(d=>d>=(gala.type==='Short Course'?100:200));return distances;}
+    function updateDistanceOptions(selected){const gala=activeGala();const stroke=$('eventStroke').value;const distances=gala?allowedDistances(gala,stroke):[];const select=$('eventDistance');select.replaceChildren();distances.forEach(d=>{const o=document.createElement('option');o.value=String(d);o.textContent=d+'m';select.appendChild(o);});if(selected&&distances.includes(Number(selected)))select.value=String(selected);}
+    function renderEvents(){const gala=activeGala();const planned=$('eventList'),completed=$('completedEventList');planned.replaceChildren();completed.replaceChildren();if(!gala)return;const events=Array.isArray(gala.events)?gala.events:[];const pending=events.filter(e=>!e.result||!e.result.time).sort(eventSort),done=events.filter(e=>e.result&&e.result.time).sort(eventSort);if(!pending.length){const empty=document.createElement('p');empty.className='muted';empty.textContent='No planned events left without a recorded time.';planned.appendChild(empty);}pending.forEach(event=>{const card=document.createElement('article');card.className='event-card';const title=document.createElement('h3');title.textContent=eventLabel(event,gala);const actions=document.createElement('div');actions.className='actions';const edit=document.createElement('button');edit.type='button';edit.className='secondary';edit.textContent='Edit event';edit.addEventListener('click',()=>openEventForm(event.id));const remove=document.createElement('button');remove.type='button';remove.className='secondary danger';remove.textContent='Delete';remove.addEventListener('click',()=>deleteEvent(event.id));actions.append(edit,remove);card.append(title,actions);planned.appendChild(card);});if(!done.length){const empty=document.createElement('p');empty.className='muted';empty.textContent='No completed events yet.';completed.appendChild(empty);}done.forEach(event=>{const card=document.createElement('article');card.className='event-card completed';const title=document.createElement('h3');title.textContent=eventLabel(event,gala);const summary=document.createElement('p');summary.className='result-summary';summary.textContent=event.result.time+(event.result.medal?' · 🏅 '+ordinal(Number(event.result.placing||1)):'');const actions=document.createElement('div');actions.className='actions';const edit=document.createElement('button');edit.type='button';edit.className='secondary';edit.textContent='Edit result';edit.addEventListener('click',()=>editCompletedResult(event.id));const eventEdit=document.createElement('button');eventEdit.type='button';eventEdit.className='secondary';eventEdit.textContent='Edit event';eventEdit.addEventListener('click',()=>openEventForm(event.id));const remove=document.createElement('button');remove.type='button';remove.className='secondary danger';remove.textContent='Delete event';remove.addEventListener('click',()=>deleteEvent(event.id));actions.append(edit,eventEdit,remove);card.append(title,summary,actions);completed.appendChild(card);});}
+    function eventSort(a,b){return (a.date||'').localeCompare(b.date||'')||Number(a.distance)-Number(b.distance)||String(a.stroke).localeCompare(String(b.stroke));}
+    function openEventForm(id=null){const gala=activeGala();if(!gala)return;editingEventId=id;eventForm.reset();setStatus($('eventFormStatus'),'');$('eventFormHeading').textContent=id?'Edit event':'New event';$('saveEvent').textContent=id?'Save changes':'Save event';const existing=id?(gala.events||[]).find(e=>e.id===id):null;$('eventStroke').value=existing&&EVENT_STROKES.includes(existing.stroke)?existing.stroke:'Freestyle';updateDistanceOptions(existing?existing.distance:undefined);$('eventDate').value=(existing&&existing.date)||gala.date||'';eventFormWrap.hidden=false;$('eventFormHeading').scrollIntoView({behavior:'smooth',block:'start'});}
+    function closeEventForm(){eventFormWrap.hidden=true;eventForm.reset();editingEventId=null;setStatus($('eventFormStatus'),'');}
+    async function saveEventForm(e){e.preventDefault();const gala=activeGala();if(!gala||!galaData)return;const stroke=$('eventStroke').value,distance=Number($('eventDistance').value),date=$('eventDate').value;if(!allowedDistances(gala,stroke).includes(distance)){setStatus($('eventFormStatus'),'That distance is not available for this stroke and course type.','error');return;}if(!date){setStatus($('eventFormStatus'),'Choose an event date.','error');return;}if(!Array.isArray(gala.events))gala.events=[];if(gala.events.some(item=>item.id!==editingEventId&&item.stroke===stroke&&Number(item.distance)===distance)){setStatus($('eventFormStatus'),'That event is already planned for this gala.','error');return;}const oldEvents=[...gala.events];const eventObj={id:editingEventId||makeId(),stroke,distance,date};if(editingEventId){const i=gala.events.findIndex(x=>x.id===editingEventId);if(i>=0)gala.events[i]={...gala.events[i],...eventObj};}else gala.events.push(eventObj);$('saveEvent').disabled=true;setStatus($('eventFormStatus'),'Saving event…');try{await apiRequest('PUT',galaData);closeEventForm();renderEvents();refreshResultsGalaOptions(true);setStatus($('eventStatus'),'Event saved successfully.','success');}catch(error){gala.events=oldEvents;setStatus($('eventFormStatus'),'Could not save: '+error.message+'. Please try again.','error');}finally{$('saveEvent').disabled=false;}}
+    async function deleteEvent(id){const gala=activeGala();if(!gala)return;const ev=(gala.events||[]).find(e=>e.id===id);if(!ev||!confirm('Delete “'+eventLabel(ev,gala)+'”? This cannot be undone.'))return;const old=gala.events;gala.events=old.filter(e=>e.id!==id);try{await apiRequest('PUT',galaData);renderEvents();refreshResultsGalaOptions(true);setStatus($('eventStatus'),'Event deleted and changes saved.','success');}catch(error){gala.events=old;renderEvents();setStatus($('eventStatus'),'Could not delete: '+error.message,'error');}}
 
-    async function requestData() {
-      setStatus(connection, "Connecting to your private GitHub data…");
-      retryButton.hidden = true;
-      try {
-        const result = await apiRequest("GET");
-        if (!result || !Array.isArray(result.galas)) throw new Error("The data file has an unexpected format.");
-        galaData = result;
-        setStatus(connection, "Connected successfully. " + galaData.galas.length + " gala(s) found in your data file.", "success");
-        renderGalas();
-        refreshGalaOptions(true);
-      } catch (error) {
-        galaData = null;
-        setStatus(connection, "Connection failed: " + error.message + ". Check your Worker URL, PIN secret and GitHub permissions.", "error");
-        retryButton.hidden = false;
-      }
-    }
+    function refreshResultsGalaOptions(keepSelection=true){const previous=keepSelection?resultsGalaSelect.value:'';resultsGalaSelect.replaceChildren();const first=document.createElement('option');first.value='';const eligible=sortedGalas().filter(g=>(g.events||[]).some(e=>!e.result||!e.result.time));first.textContent=eligible.length?'Choose a gala':'No galas with outstanding events';resultsGalaSelect.appendChild(first);eligible.forEach(gala=>{const o=document.createElement('option');o.value=gala.id;o.textContent=(gala.name||'Untitled gala')+' — '+formatDate(gala.date);resultsGalaSelect.appendChild(o);});if(previous&&[...resultsGalaSelect.options].some(o=>o.value===previous))resultsGalaSelect.value=previous;updateResultsWorkspace();}
+    function selectedResultsGala(){return galaData&&galaData.galas.find(g=>g.id===resultsGalaSelect.value);}
+    function selectedResultsEvent(){const gala=selectedResultsGala();return gala&&(gala.events||[]).find(e=>e.id===resultsEventSelect.value);}
+    function updateResultsWorkspace(){const gala=selectedResultsGala();resultsWorkspace.hidden=!gala;resultForm.hidden=true;resultsEventSelect.replaceChildren();const first=document.createElement('option');first.value='';first.textContent=gala?'Choose an event without a time':'Choose a gala first';resultsEventSelect.appendChild(first);if(!gala){$('resultsEventDate').textContent='';return;}$('resultsGalaDetails').textContent=formatDate(gala.date)+' · '+(gala.type||'Pool type not set')+' · '+(gala.venue||'Venue not set');(gala.events||[]).filter(e=>!e.result||!e.result.time).sort(eventSort).forEach(ev=>{const o=document.createElement('option');o.value=ev.id;o.textContent=eventLabel(ev,gala);resultsEventSelect.appendChild(o);});$('resultsStatus').textContent='';$('resultsEventDate').textContent='';}
+    function loadSelectedResult(){const event=selectedResultsEvent(),gala=selectedResultsGala();resultForm.hidden=!event;setStatus($('resultFormStatus'),'');if(!event||!gala){$('resultsEventDate').textContent='';return;}$('resultsEventDate').textContent='Event date: '+formatDate(event.date||gala.date);$('resultTime').value='';$('resultMedal').checked=false;$('resultPlacing').value='1';$('placingWrap').hidden=true;$('saveResult').textContent='Save result';}
+    async function saveResult(e){e.preventDefault();const gala=selectedResultsGala(),event=selectedResultsEvent();if(!gala||!event||!galaData)return;const time=$('resultTime').value.trim(),medal=$('resultMedal').checked,placing=medal?Number($('resultPlacing').value):null;if(!/^\d{1,2}:[0-5]\d\.\d{2}$/.test(time)){setStatus($('resultFormStatus'),'Enter the time as mm:ss.nn, for example 01:12.45.','error');return;}const previous=event.result;event.result={time,medal,placing};$('saveResult').disabled=true;setStatus($('resultFormStatus'),'Saving result…');try{await apiRequest('PUT',galaData);setStatus($('resultFormStatus'),'Result saved successfully.','success');$('resultTime').value='';$('resultMedal').checked=false;$('placingWrap').hidden=true;resultForm.hidden=true;refreshResultsGalaOptions(true);if(resultsGalaSelect.value===gala.id){resultsEventSelect.value='';updateResultsWorkspace();}setStatus($('resultsStatus'),'Result saved. Select the next outstanding event, or use the gala page to edit completed results.','success');}catch(error){if(previous)event.result=previous;else delete event.result;setStatus($('resultFormStatus'),'Could not save: '+error.message+'. Please try again.','error');}finally{$('saveResult').disabled=false;}}
+    function editCompletedResult(eventId){const gala=activeGala(),ev=gala&&(gala.events||[]).find(e=>e.id===eventId);if(!gala||!ev||!ev.result)return;editingResultEventId=eventId;$('resultEditHeading').textContent='Edit result · '+eventLabel(ev,gala);$('editResultTime').value=ev.result.time||'';$('editResultMedal').checked=Boolean(ev.result.medal);$('editResultPlacing').value=String(ev.result.placing||1);$('editPlacingWrap').hidden=!ev.result.medal;setStatus($('editResultStatus'),'');$('resultEditWrap').hidden=false;document.body.style.overflow='hidden';}
+    function closeResultEdit(){ $('resultEditWrap').hidden=true; $('resultEditForm').reset(); editingResultEventId=null; document.body.style.overflow=''; setStatus($('editResultStatus'),''); }
+    async function saveEditedResult(e){e.preventDefault();const gala=activeGala(),ev=gala&&(gala.events||[]).find(x=>x.id===editingResultEventId);if(!gala||!ev)return;const time=$('editResultTime').value.trim(),medal=$('editResultMedal').checked,placing=medal?Number($('editResultPlacing').value):null;if(!/^\d{1,2}:[0-5]\d\.\d{2}$/.test(time)){setStatus($('editResultStatus'),'Enter the time as mm:ss.nn, for example 01:12.45.','error');return;}const old=ev.result;ev.result={time,medal,placing};$('saveEditedResult').disabled=true;setStatus($('editResultStatus'),'Saving result…');try{await apiRequest('PUT',galaData);closeResultEdit();renderEvents();refreshResultsGalaOptions(true);setStatus($('eventStatus'),'Result updated successfully.','success');}catch(error){ev.result=old;setStatus($('editResultStatus'),'Could not save: '+error.message+'. Please try again.','error');}finally{$('saveEditedResult').disabled=false;}}
+    function ordinal(v){return v===1?'1st':v===2?'2nd':v===3?'3rd':String(v)+'th';}
+    function allHistoryResults(){const rows=[];(galaData?.galas||[]).forEach(gala=>(gala.events||[]).forEach(ev=>{if(!ev.result||!ev.result.time)return;rows.push({galaId:gala.id,galaName:gala.name||'Untitled gala',date:ev.date||gala.date||'',venue:gala.venue||'',type:gala.type||'',eventId:ev.id,stroke:ev.stroke||'',distance:Number(ev.distance),time:ev.result.time,medal:Boolean(ev.result.medal),placing:ev.result.placing==null?null:Number(ev.result.placing)});}));return rows;}
+    function timeToCentiseconds(v){const m=String(v||'').match(/^(\d{1,2}):(\d{2})\.(\d{2})$/);return m?Number(m[1])*6000+Number(m[2])*100+Number(m[3]):Number.MAX_SAFE_INTEGER;}
+    function setHistoryCourse(course){historyCourse=course;$('historyShort').classList.toggle('active',course==='Short Course');$('historyLong').classList.toggle('active',course==='Long Course');$('historyShort').setAttribute('aria-pressed',String(course==='Short Course'));$('historyLong').setAttribute('aria-pressed',String(course==='Long Course'));const stroke=$('historyStroke').value;const dist=$('historyDistance');const current=dist.value;const available=EVENT_DISTANCES.filter(d=>d!==25||course==='Short Course').filter(d=>stroke!=='IM'||d>=(course==='Short Course'?100:200));[...dist.options].forEach(o=>{if(o.value)o.hidden=!available.includes(Number(o.value));});if(current&& !available.includes(Number(current)))dist.value='';renderHistory();}
+    function renderHistory(){const rows=allHistoryResults(),stroke=$('historyStroke').value,distance=$('historyDistance').value;const filtered=rows.filter(r=>r.type===historyCourse&&(!stroke||r.stroke===stroke)&&(!distance||r.distance===Number(distance))).sort((a,b)=>(b.date||'').localeCompare(a.date||'')||a.galaName.localeCompare(b.galaName));const selected=stroke&&distance;const fastest=selected&&filtered.length?[...filtered].sort((a,b)=>timeToCentiseconds(a.time)-timeToCentiseconds(b.time))[0]:null;const stats=$('historyStats');stats.replaceChildren();const medalCount=filtered.filter(r=>r.medal).length;const items=[{label:'Results',value:String(filtered.length)},{label:'⭐ Personal best',value:selected&&fastest?fastest.time:'—',pb:true},{label:'Medals',value:String(medalCount)}];items.forEach(item=>{const box=document.createElement('div');box.className='history-stat'+(item.pb?' pb-highlight':'');const strong=document.createElement('strong');strong.textContent=item.value;const caption=document.createElement('span');caption.className='muted';caption.textContent=item.label;box.append(strong,caption);stats.appendChild(box);});const list=$('historyList');list.replaceChildren();if(!filtered.length){const empty=document.createElement('p');empty.className='muted';empty.textContent=rows.length?'No results match these filters.':'No results recorded yet. Add results from Enter Results and they will appear here.';list.appendChild(empty);return;}filtered.forEach(row=>{const card=document.createElement('article');card.className='event-card';const isPB=selected&&fastest&&row.eventId===fastest.eventId&&row.galaId===fastest.galaId;const heading=document.createElement('h3');heading.textContent=(isPB?'⭐ ':'')+row.stroke+' '+row.distance+'m';const meta=document.createElement('p');meta.className='muted';meta.textContent=formatDate(row.date)+' · '+row.galaName+(row.venue?' · '+row.venue:'');const summary=document.createElement('div');summary.className='result-summary history-row';const timeBlock=document.createElement('div');const time=document.createElement('strong');time.textContent=row.time;const tags=document.createElement('div');tags.style.marginTop='5px';if(row.medal){const medal=document.createElement('span');medal.style.fontSize='13px';medal.style.fontWeight='700';medal.textContent='🏅 '+ordinal(row.placing||1);tags.appendChild(medal);}if(isPB){const tag=document.createElement('span');tag.className='pb-tag';tag.textContent='PERSONAL BEST';tags.appendChild(tag);}timeBlock.append(time,tags);const course=document.createElement('span');course.className='muted';course.textContent=row.type;summary.append(timeBlock,course);card.append(heading,meta,summary);list.appendChild(card);});}
 
-    function makeId() {
-      if (window.crypto && typeof window.crypto.randomUUID === "function") return window.crypto.randomUUID();
-      return "gala-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
-    }
-
-    function formatDate(dateString) {
-      if (!dateString) return "Date not set";
-      const date = new Date(dateString + "T12:00:00");
-      return Number.isNaN(date.getTime()) ? dateString : date.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
-    }
-
-    function renderGalas() {
-      const list = document.getElementById("galaList");
-      list.replaceChildren();
-      if (!galaData || galaData.galas.length === 0) {
-        const empty = document.createElement("p");
-        empty.className = "muted";
-        empty.textContent = "No galas yet. Select “Add a gala” to create your first one.";
-        list.appendChild(empty);
-        return;
-      }
-      const sorted = [...galaData.galas].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-      sorted.forEach(gala => {
-        const card = document.createElement("article");
-        card.className = "gala-card";
-        const title = document.createElement("h3");
-        title.textContent = gala.name || "Untitled gala";
-        const date = document.createElement("p");
-        date.textContent = "📅 " + formatDate(gala.date);
-        const type = document.createElement("p");
-        type.textContent = "🏊 " + (gala.type || "Pool type not set");
-        const venue = document.createElement("p");
-        venue.textContent = "📍 " + (gala.venue || "Venue not set");
-        const actions = document.createElement("div");
-        actions.className = "actions";
-        const edit = document.createElement("button");
-        edit.type = "button";
-        edit.className = "secondary";
-        edit.textContent = "Edit";
-        edit.addEventListener("click", () => openGalaForm(gala.id));
-        const remove = document.createElement("button");
-        remove.type = "button";
-        remove.className = "secondary danger";
-        remove.textContent = "Delete";
-        remove.addEventListener("click", () => deleteGala(gala.id));
-        actions.append(edit, remove);
-        card.append(title, date, type, venue, actions);
-        list.appendChild(card);
-      });
-    }
-
-    function openGalaForm(id = null) {
-      editingGalaId = id;
-      galaForm.reset();
-      setStatus(document.getElementById("galaFormStatus"), "");
-      document.getElementById("galaFormHeading").textContent = id ? "Edit gala" : "New gala";
-      document.getElementById("saveGala").textContent = id ? "Save changes" : "Save gala";
-      if (id) {
-        const gala = galaData.galas.find(item => item.id === id);
-        if (!gala) return;
-        document.getElementById("galaName").value = gala.name || "";
-        document.getElementById("galaDate").value = gala.date || "";
-        document.getElementById("galaType").value = gala.type || "Short Course";
-        document.getElementById("galaVenue").value = gala.venue || "";
-      }
-      galaFormWrap.hidden = false;
-      document.getElementById("galaFormHeading").scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-
-    function closeGalaForm() {
-      galaFormWrap.hidden = true;
-      galaForm.reset();
-      editingGalaId = null;
-      setStatus(document.getElementById("galaFormStatus"), "");
-    }
-
-    async function saveData() {
-      setStatus(document.getElementById("galaFormStatus"), "Saving to your private GitHub data…");
-      document.getElementById("saveGala").disabled = true;
-      try {
-        await apiRequest("PUT", galaData);
-        setStatus(document.getElementById("galaFormStatus"), "Saved successfully.", "success");
-        setStatus(connection, "Connected successfully. " + galaData.galas.length + " gala(s) found in your data file.", "success");
-        renderGalas();
-        refreshGalaOptions(true);
-        closeGalaForm();
-        setStatus(document.getElementById("galaStatus"), "Changes saved to your private GitHub data.", "success");
-      } catch (error) {
-        setStatus(document.getElementById("galaFormStatus"), "Could not save: " + error.message + ". Your changes are still on this screen; try again.", "error");
-      } finally {
-        document.getElementById("saveGala").disabled = false;
-      }
-    }
-
-    galaForm.addEventListener("submit", async event => {
-      event.preventDefault();
-      if (!galaData) return;
-      const gala = {
-        id: editingGalaId || makeId(),
-        name: document.getElementById("galaName").value.trim(),
-        date: document.getElementById("galaDate").value,
-        type: document.getElementById("galaType").value,
-        venue: document.getElementById("galaVenue").value.trim()
-      };
-      if (editingGalaId) {
-        const index = galaData.galas.findIndex(item => item.id === editingGalaId);
-        if (index !== -1) galaData.galas[index] = { ...galaData.galas[index], ...gala };
-      } else {
-        galaData.galas.push(gala);
-      }
-      await saveData();
-    });
-
-    async function deleteGala(id) {
-      const gala = galaData.galas.find(item => item.id === id);
-      if (!gala || !window.confirm("Delete “" + (gala.name || "this gala") + "”? This cannot be undone.")) return;
-      const oldGalas = galaData.galas;
-      galaData.galas = oldGalas.filter(item => item.id !== id);
-      setStatus(document.getElementById("galaStatus"), "Saving deletion…");
-      try {
-        await apiRequest("PUT", galaData);
-        renderGalas();
-        refreshGalaOptions(true);
-        setStatus(document.getElementById("galaStatus"), "Gala deleted and changes saved.", "success");
-        setStatus(connection, "Connected successfully. " + galaData.galas.length + " gala(s) found in your data file.", "success");
-      } catch (error) {
-        galaData.galas = oldGalas;
-        renderGalas();
-        setStatus(document.getElementById("galaStatus"), "Could not delete: " + error.message + ". Nothing was removed from the saved data.", "error");
-      }
-    }
-
-    const EVENT_STROKES = ["Freestyle", "Backstroke", "Breaststroke", "Butterfly", "IM"];
-    const EVENT_DISTANCES = [25, 50, 100, 200, 400, 800];
-
-    function selectedGala() {
-      return galaData && galaData.galas.find(gala => gala.id === eventGalaSelect.value);
-    }
-
-    function refreshGalaOptions(keepSelection = true) {
-      const previous = keepSelection ? eventGalaSelect.value : "";
-      eventGalaSelect.replaceChildren();
-      const placeholder = document.createElement("option");
-      placeholder.value = "";
-      placeholder.textContent = galaData && galaData.galas.length ? "Choose a gala" : "Add a gala first";
-      eventGalaSelect.appendChild(placeholder);
-      if (galaData) {
-        [...galaData.galas].sort((a, b) => (b.date || "").localeCompare(a.date || "")).forEach(gala => {
-          const option = document.createElement("option");
-          option.value = gala.id;
-          option.textContent = (gala.name || "Untitled gala") + " — " + formatDate(gala.date);
-          eventGalaSelect.appendChild(option);
-        });
-      }
-      if (previous && galaData && galaData.galas.some(gala => gala.id === previous)) {
-        eventGalaSelect.value = previous;
-      }
-      updateEventWorkspace();
-    }
-
-    function updateDistanceOptions(selectedValue) {
-      const gala = selectedGala();
-      const distances = gala && gala.type === "Short Course" ? EVENT_DISTANCES : EVENT_DISTANCES.filter(distance => distance !== 25);
-      const select = document.getElementById("eventDistance");
-      select.replaceChildren();
-      distances.forEach(distance => {
-        const option = document.createElement("option");
-        option.value = String(distance);
-        option.textContent = distance + "m";
-        select.appendChild(option);
-      });
-      if (selectedValue && distances.includes(Number(selectedValue))) select.value = String(selectedValue);
-    }
-
-    function updateEventWorkspace() {
-      const gala = selectedGala();
-      eventWorkspace.hidden = !gala;
-      if (!gala) {
-        closeEventForm();
-        return;
-      }
-      document.getElementById("eventGalaDetails").textContent = formatDate(gala.date) + " · " + (gala.type || "Pool type not set") + " · " + (gala.venue || "Venue not set");
-      renderEvents();
-    }
-
-    function renderEvents() {
-      const list = document.getElementById("eventList");
-      list.replaceChildren();
-      const gala = selectedGala();
-      if (!gala) return;
-      const events = Array.isArray(gala.events) ? gala.events : [];
-      if (!events.length) {
-        const empty = document.createElement("p");
-        empty.className = "muted";
-        empty.textContent = "No events planned for this gala yet. Select “Add an event” to get started.";
-        list.appendChild(empty);
-        return;
-      }
-      [...events].sort((a, b) => Number(a.distance) - Number(b.distance) || String(a.stroke).localeCompare(String(b.stroke))).forEach(event => {
-        const card = document.createElement("article");
-        card.className = "event-card";
-        const title = document.createElement("h3");
-        title.textContent = (event.distance || "?") + "m " + (event.stroke || "Event");
-        const details = document.createElement("p");
-        details.className = "muted";
-        details.textContent = "Event date: " + formatDate(event.date || gala.date) + " · Planned for " + (gala.name || "this gala");
-        const actions = document.createElement("div");
-        actions.className = "actions";
-        const edit = document.createElement("button");
-        edit.type = "button";
-        edit.className = "secondary";
-        edit.textContent = "Edit";
-        edit.addEventListener("click", () => openEventForm(event.id));
-        const remove = document.createElement("button");
-        remove.type = "button";
-        remove.className = "secondary danger";
-        remove.textContent = "Delete";
-        remove.addEventListener("click", () => deleteEvent(event.id));
-        actions.append(edit, remove);
-        card.append(title, details, actions);
-        list.appendChild(card);
-      });
-    }
-
-    function openEventForm(id = null) {
-      const gala = selectedGala();
-      if (!gala) return;
-      editingEventId = id;
-      eventForm.reset();
-      setStatus(document.getElementById("eventFormStatus"), "");
-      document.getElementById("eventFormHeading").textContent = id ? "Edit event" : "New event";
-      document.getElementById("saveEvent").textContent = id ? "Save changes" : "Save event";
-      const existing = id && Array.isArray(gala.events) ? gala.events.find(item => item.id === id) : null;
-      updateDistanceOptions(existing ? existing.distance : undefined);
-      if (existing) {
-        document.getElementById("eventStroke").value = EVENT_STROKES.includes(existing.stroke) ? existing.stroke : "Freestyle";
-        if ([...document.getElementById("eventDistance").options].some(option => option.value === String(existing.distance))) {
-          document.getElementById("eventDistance").value = String(existing.distance);
-        }
-      }
-      document.getElementById("eventDate").value = (existing && existing.date) || gala.date || "";
-      eventFormWrap.hidden = false;
-      document.getElementById("eventFormHeading").scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-
-    function closeEventForm() {
-      eventFormWrap.hidden = true;
-      eventForm.reset();
-      editingEventId = null;
-      setStatus(document.getElementById("eventFormStatus"), "");
-    }
-
-    async function saveEventData() {
-      setStatus(document.getElementById("eventFormStatus"), "Saving to your private GitHub data…");
-      document.getElementById("saveEvent").disabled = true;
-      try {
-        await apiRequest("PUT", galaData);
-        closeEventForm();
-        renderEvents();
-        setStatus(document.getElementById("eventStatus"), "Event saved successfully.", "success");
-        setStatus(connection, "Connected successfully. " + galaData.galas.length + " gala(s) found in your data file.", "success");
-      } catch (error) {
-        setStatus(document.getElementById("eventFormStatus"), "Could not save: " + error.message + ". Your changes are still on this screen; try again.", "error");
-      } finally {
-        document.getElementById("saveEvent").disabled = false;
-      }
-    }
-
-    eventForm.addEventListener("submit", async event => {
-      event.preventDefault();
-      const gala = selectedGala();
-      if (!gala || !galaData) return;
-      const stroke = document.getElementById("eventStroke").value;
-      const distance = Number(document.getElementById("eventDistance").value);
-      if (!EVENT_STROKES.includes(stroke) || !EVENT_DISTANCES.includes(distance) || (distance === 25 && gala.type !== "Short Course")) {
-        setStatus(document.getElementById("eventFormStatus"), "That stroke or distance is not valid for this gala.", "error");
-        return;
-      }
-      if (!Array.isArray(gala.events)) gala.events = [];
-      const duplicate = gala.events.some(item => item.id !== editingEventId && item.stroke === stroke && Number(item.distance) === distance);
-      if (duplicate) {
-        setStatus(document.getElementById("eventFormStatus"), "That event is already planned for this gala.", "error");
-        return;
-      }
-      const date = document.getElementById("eventDate").value;
-      if (!date) {
-        setStatus(document.getElementById("eventFormStatus"), "Choose an event date.", "error");
-        return;
-      }
-      const plannedEvent = { id: editingEventId || makeId(), stroke, distance, date };
-      if (editingEventId) {
-        const index = gala.events.findIndex(item => item.id === editingEventId);
-        if (index !== -1) gala.events[index] = { ...gala.events[index], ...plannedEvent };
-      } else {
-        gala.events.push(plannedEvent);
-      }
-      await saveEventData();
-    });
-
-    async function deleteEvent(id) {
-      const gala = selectedGala();
-      if (!gala || !Array.isArray(gala.events)) return;
-      const plannedEvent = gala.events.find(item => item.id === id);
-      if (!plannedEvent || !window.confirm("Delete “" + plannedEvent.distance + "m " + plannedEvent.stroke + "”? This cannot be undone.")) return;
-      const oldEvents = gala.events;
-      gala.events = oldEvents.filter(item => item.id !== id);
-      setStatus(document.getElementById("eventStatus"), "Saving deletion…");
-      try {
-        await apiRequest("PUT", galaData);
-        renderEvents();
-        setStatus(document.getElementById("eventStatus"), "Event deleted and changes saved.", "success");
-      } catch (error) {
-        gala.events = oldEvents;
-        renderEvents();
-        setStatus(document.getElementById("eventStatus"), "Could not delete: " + error.message + ". Nothing was removed from the saved data.", "error");
-      }
-    }
-
-    function selectedResultsGala() {
-      return galaData && galaData.galas.find(gala => gala.id === resultsGalaSelect.value);
-    }
-
-    function selectedResultsEvent() {
-      const gala = selectedResultsGala();
-      return gala && Array.isArray(gala.events) ? gala.events.find(event => event.id === resultsEventSelect.value) : null;
-    }
-
-    function refreshResultsGalaOptions(keepSelection = true) {
-      const previous = keepSelection ? resultsGalaSelect.value : "";
-      resultsGalaSelect.replaceChildren();
-      const first = document.createElement("option");
-      first.value = "";
-      first.textContent = galaData && galaData.galas.length ? "Choose a gala" : "Add a gala first";
-      resultsGalaSelect.appendChild(first);
-      if (galaData) [...galaData.galas].sort((a,b) => (b.date || "").localeCompare(a.date || "")).forEach(gala => {
-        const option = document.createElement("option");
-        option.value = gala.id;
-        option.textContent = (gala.name || "Untitled gala") + " — " + formatDate(gala.date);
-        resultsGalaSelect.appendChild(option);
-      });
-      if (previous && galaData && galaData.galas.some(gala => gala.id === previous)) resultsGalaSelect.value = previous;
-      updateResultsWorkspace();
-    }
-
-    function updateResultsWorkspace() {
-      const gala = selectedResultsGala();
-      resultsWorkspace.hidden = !gala;
-      resultForm.hidden = true;
-      resultsEventSelect.replaceChildren();
-      const first = document.createElement("option");
-      first.value = "";
-      first.textContent = gala ? ((gala.events || []).length ? "Choose an event" : "Plan events for this gala first") : "Choose a gala first";
-      resultsEventSelect.appendChild(first);
-      if (!gala) { document.getElementById("resultsEventDate").textContent = ""; return; }
-      document.getElementById("resultsGalaDetails").textContent = formatDate(gala.date) + " · " + (gala.type || "Pool type not set") + " · " + (gala.venue || "Venue not set");
-      [...(Array.isArray(gala.events) ? gala.events : [])].sort((a,b) => Number(a.distance)-Number(b.distance) || String(a.stroke).localeCompare(String(b.stroke))).forEach(event => {
-        const option = document.createElement("option");
-        option.value = event.id;
-        option.textContent = event.distance + "m " + event.stroke + " — " + formatDate(event.date || gala.date) + (event.result ? " ✓" : "");
-        resultsEventSelect.appendChild(option);
-      });
-      renderResults();
-    }
-
-    function renderResults() {
-      const gala = selectedResultsGala();
-      const list = document.getElementById("resultsList");
-      list.replaceChildren();
-      if (!gala) return;
-      const events = Array.isArray(gala.events) ? gala.events : [];
-      const withResults = events.filter(event => event.result);
-      if (!withResults.length) {
-        const empty = document.createElement("p");
-        empty.className = "muted";
-        empty.textContent = "No results entered for this gala yet.";
-        list.appendChild(empty);
-        return;
-      }
-      [...withResults].sort((a,b) => Number(a.distance)-Number(b.distance) || String(a.stroke).localeCompare(String(b.stroke))).forEach(event => {
-        const result = event.result;
-        const card = document.createElement("article");
-        card.className = "event-card";
-        const heading = document.createElement("h3");
-        heading.textContent = event.distance + "m " + event.stroke;
-        const eventDate = document.createElement("p");
-        eventDate.className = "muted";
-        eventDate.textContent = "Event date: " + formatDate(event.date || gala.date);
-        const details = document.createElement("p");
-        details.className = "result-summary";
-        details.textContent = result.time + (result.medal ? " · Medal — " + ordinal(Number(result.placing)) : "");
-        const edit = document.createElement("button");
-        edit.type = "button"; edit.className = "secondary"; edit.textContent = "Edit result";
-        edit.addEventListener("click", () => { resultsEventSelect.value = event.id; loadSelectedResult(); document.getElementById("resultTime").scrollIntoView({behavior:"smooth",block:"center"}); });
-        card.append(heading, eventDate, details, edit);
-        list.appendChild(card);
-      });
-    }
-
-    function ordinal(value) { return value === 1 ? "1st" : value === 2 ? "2nd" : value === 3 ? "3rd" : String(value) + "th"; }
-
-    function loadSelectedResult() {
-      const event = selectedResultsEvent();
-      resultForm.hidden = !event;
-      const gala = selectedResultsGala();
-      document.getElementById("resultsEventDate").textContent = event && gala ? "Event date: " + formatDate(event.date || gala.date) : "";
-      setStatus(document.getElementById("resultFormStatus"), "");
-      if (!event) return;
-      const result = event.result || {};
-      document.getElementById("resultTime").value = result.time || "";
-      document.getElementById("resultMedal").checked = Boolean(result.medal);
-      document.getElementById("resultPlacing").value = String(result.placing || 1);
-      document.getElementById("placingWrap").hidden = !result.medal;
-      document.getElementById("saveResult").textContent = result.time ? "Save changes" : "Save result";
-      document.getElementById("deleteResult").hidden = !result.time;
-    }
-
-    async function saveResult() {
-      const gala = selectedResultsGala();
-      const event = selectedResultsEvent();
-      if (!gala || !event || !galaData) return;
-      const time = document.getElementById("resultTime").value.trim();
-      const medal = document.getElementById("resultMedal").checked;
-      const placing = medal ? Number(document.getElementById("resultPlacing").value) : null;
-      if (!/^[0-9]{1,2}:[0-5][0-9]\.[0-9]{2}$/.test(time)) { setStatus(document.getElementById("resultFormStatus"), "Enter the time as mm:ss.nn, for example 01:12.45.", "error"); return; }
-      const previous = event.result;
-      event.result = { time, medal, placing };
-      const button = document.getElementById("saveResult");
-      button.disabled = true;
-      setStatus(document.getElementById("resultFormStatus"), "Saving result to your private GitHub data…");
-      try {
-        await apiRequest("PUT", galaData);
-        setStatus(document.getElementById("resultFormStatus"), "Result saved successfully.", "success");
-        setStatus(document.getElementById("resultsStatus"), "Result saved.", "success");
-        refreshResultsGalaOptions(true);
-        resultsEventSelect.value = event.id;
-        loadSelectedResult();
-        renderResults();
-      } catch (error) {
-        if (previous) event.result = previous; else delete event.result;
-        setStatus(document.getElementById("resultFormStatus"), "Could not save: " + error.message + ". Please try again.", "error");
-      } finally { button.disabled = false; }
-    }
-
-    async function deleteSelectedResult() {
-      const gala = selectedResultsGala();
-      const event = selectedResultsEvent();
-      if (!gala || !event || !event.result) return;
-      if (!window.confirm("Delete the result for " + event.distance + "m " + event.stroke + "?")) return;
-      const previous = event.result;
-      delete event.result;
-      try {
-        await apiRequest("PUT", galaData);
-        resultForm.reset();
-        resultForm.hidden = true;
-        setStatus(document.getElementById("resultsStatus"), "Result deleted and changes saved.", "success");
-        refreshResultsGalaOptions(true);
-      } catch (error) {
-        event.result = previous;
-        setStatus(document.getElementById("resultsStatus"), "Could not delete result: " + error.message, "error");
-        loadSelectedResult();
-      }
-    }
-
-    function allHistoryResults() {
-      if (!galaData || !Array.isArray(galaData.galas)) return [];
-      const rows = [];
-      galaData.galas.forEach(gala => {
-        (Array.isArray(gala.events) ? gala.events : []).forEach(event => {
-          if (!event.result || !event.result.time) return;
-          rows.push({
-            galaId: gala.id,
-            galaName: gala.name || "Untitled gala",
-            date: event.date || gala.date || "",
-            venue: gala.venue || "",
-            type: gala.type || "",
-            eventId: event.id,
-            stroke: event.stroke || "",
-            distance: Number(event.distance),
-            time: event.result.time,
-            medal: Boolean(event.result.medal),
-            placing: event.result.placing == null ? null : Number(event.result.placing)
-          });
-        });
-      });
-      return rows;
-    }
-
-    function timeToCentiseconds(value) {
-      const match = String(value || "").match(/^(\d{1,2}):(\d{2})\.(\d{2})$/);
-      return match ? (Number(match[1]) * 6000) + (Number(match[2]) * 100) + Number(match[3]) : Number.MAX_SAFE_INTEGER;
-    }
-
-    function renderHistory() {
-      const rows = allHistoryResults();
-      const course = document.getElementById("historyCourse").value;
-      const stroke = document.getElementById("historyStroke").value;
-      const distance = document.getElementById("historyDistance").value;
-      const filtered = rows.filter(row => row.type === course && (!stroke || row.stroke === stroke) && (!distance || row.distance === Number(distance)))
-        .sort((a, b) => (a.date || "").localeCompare(b.date || "") || a.galaName.localeCompare(b.galaName));
-      const stats = document.getElementById("historyStats");
-      stats.replaceChildren();
-      const fastest = stroke && distance && filtered.length ? [...filtered].sort((a,b) => timeToCentiseconds(a.time)-timeToCentiseconds(b.time))[0] : null;
-      const personalBest = stroke && distance && filtered.length ? fastest.time : "—";
-      const medalCount = filtered.filter(row => row.medal).length;
-      [
-        {label:"Results", value:String(filtered.length)},
-        {label:"Fastest time (select event)", value:fastest ? fastest.time : "—"},
-        {label:"Personal best time", value:personalBest},
-        {label:"Medals", value:String(medalCount)}
-      ].forEach(item => {
-        const box = document.createElement("div"); box.className = "history-stat";
-        const strong = document.createElement("strong"); strong.textContent = item.value;
-        const caption = document.createElement("span"); caption.className = "muted"; caption.textContent = item.label;
-        box.append(strong, caption); stats.appendChild(box);
-      });
-      const list = document.getElementById("historyList");
-      list.replaceChildren();
-      if (!filtered.length) {
-        const empty = document.createElement("p"); empty.className = "muted";
-        empty.textContent = rows.length ? "No results match these filters." : "No results recorded yet. Add results from Enter Results and they will appear here.";
-        list.appendChild(empty); return;
-      }
-      filtered.forEach(row => {
-        const card = document.createElement("article"); card.className = "event-card";
-        const heading = document.createElement("h3"); heading.textContent = row.distance + "m " + row.stroke;
-        const meta = document.createElement("p"); meta.className = "muted";
-        meta.textContent = formatDate(row.date) + " · " + row.galaName + (row.venue ? " · " + row.venue : "");
-        const summary = document.createElement("div"); summary.className = "result-summary history-row";
-        const timeBlock = document.createElement("div");
-        const time = document.createElement("strong"); time.textContent = row.time;
-        const tags = document.createElement("div"); tags.style.marginTop = "5px";
-        if (row.medal) { const medal = document.createElement("span"); medal.style.fontSize = "13px"; medal.style.fontWeight = "700"; medal.textContent = "🏅 " + ordinal(row.placing || 1); tags.appendChild(medal); }
-        timeBlock.append(time, tags);
-        const course = document.createElement("span"); course.className = "muted"; course.textContent = row.type;
-        summary.append(timeBlock, course);
-        card.append(heading, meta, summary); list.appendChild(card);
-      });
-    }
-
-    function showHome() {
-      document.getElementById("homeMenu").hidden = false;
-      galaPage.hidden = true;
-      eventPage.hidden = true;
-      resultsPage.hidden = true;
-      historyPage.hidden = true;
-      placeholderPage.hidden = true;
-      closeGalaForm();
-      closeEventForm();
-      setStatus(document.getElementById("galaStatus"), "");
-      setStatus(document.getElementById("eventStatus"), "");
-      setStatus(document.getElementById("resultsStatus"), "");
-      setStatus(document.getElementById("resultFormStatus"), "");
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-
-    loginForm.addEventListener("submit", async event => {
-      event.preventDefault();
-      appPin = document.getElementById("pin").value.trim();
-      if (!appPin) {
-        setStatus(loginStatus, "Please enter your PIN.", "error");
-        return;
-      }
-      loginSection.hidden = true;
-      appSection.hidden = false;
-      await requestData();
-      if (!galaData) {
-        loginSection.hidden = false;
-        appSection.hidden = true;
-        setStatus(loginStatus, "Login or connection failed. Please try again.", "error");
-        document.getElementById("pin").value = "";
-        appPin = "";
-      } else {
-        document.getElementById("pin").value = "";
-      }
-    });
-
-    retryButton.addEventListener("click", requestData);
-    document.querySelectorAll("[data-page]").forEach(button => {
-      button.addEventListener("click", () => {
-        const page = button.dataset.page;
-        document.getElementById("homeMenu").hidden = true;
-        if (page === "Galas") {
-          placeholderPage.hidden = true;
-          eventPage.hidden = true;
-          resultsPage.hidden = true;
-          historyPage.hidden = true;
-          galaPage.hidden = false;
-          renderGalas();
-          galaPage.scrollIntoView({ behavior: "smooth", block: "start" });
-        } else if (page === "Plan Events") {
-          galaPage.hidden = true;
-          resultsPage.hidden = true;
-          historyPage.hidden = true;
-          placeholderPage.hidden = true;
-          eventPage.hidden = false;
-          refreshGalaOptions(true);
-          eventPage.scrollIntoView({ behavior: "smooth", block: "start" });
-        } else if (page === "Enter Results") {
-          galaPage.hidden = true;
-          eventPage.hidden = true;
-          historyPage.hidden = true;
-          placeholderPage.hidden = true;
-          resultsPage.hidden = false;
-          refreshResultsGalaOptions(true);
-          resultsPage.scrollIntoView({ behavior: "smooth", block: "start" });
-        } else if (page === "Results History") {
-          galaPage.hidden = true;
-          eventPage.hidden = true;
-          resultsPage.hidden = true;
-          placeholderPage.hidden = true;
-          historyPage.hidden = false;
-          renderHistory();
-          historyPage.scrollIntoView({ behavior: "smooth", block: "start" });
-        } else {
-          galaPage.hidden = true;
-          eventPage.hidden = true;
-          resultsPage.hidden = true;
-          historyPage.hidden = true;
-          document.getElementById("pageTitle").textContent = page;
-          document.getElementById("pageMessage").textContent = page + " will be built next. Your data connection is working.";
-          placeholderPage.hidden = false;
-          placeholderPage.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
-      });
-    });
-    document.getElementById("addGala").addEventListener("click", () => openGalaForm());
-    document.getElementById("cancelGala").addEventListener("click", closeGalaForm);
-    document.getElementById("backHome").addEventListener("click", showHome);
-    document.getElementById("back").addEventListener("click", showHome);
-    document.getElementById("eventBackHome").addEventListener("click", showHome);
-    document.getElementById("resultsBackHome").addEventListener("click", showHome);
-    document.getElementById("historyBackHome").addEventListener("click", showHome);
-    document.getElementById("historyCourse").addEventListener("change", renderHistory);
-    document.getElementById("historyStroke").addEventListener("change", renderHistory);
-    document.getElementById("historyDistance").addEventListener("change", renderHistory);
-    document.getElementById("addEvent").addEventListener("click", () => openEventForm());
-    document.getElementById("cancelEvent").addEventListener("click", closeEventForm);
-    resultsGalaSelect.addEventListener("change", updateResultsWorkspace);
-    resultsEventSelect.addEventListener("change", loadSelectedResult);
-    document.getElementById("resultMedal").addEventListener("change", event => {
-      document.getElementById("placingWrap").hidden = !event.target.checked;
-    });
-    resultForm.addEventListener("submit", event => { event.preventDefault(); saveResult(); });
-    document.getElementById("deleteResult").addEventListener("click", deleteSelectedResult);
-    eventGalaSelect.addEventListener("change", () => {
-      closeEventForm();
-      setStatus(document.getElementById("eventStatus"), "");
-      updateEventWorkspace();
-    });
-    document.getElementById("logout").addEventListener("click", () => {
-      appPin = "";
-      galaData = null;
-      appSection.hidden = true;
-      loginSection.hidden = false;
-      showHome();
-      setStatus(loginStatus, "You have logged out.");
-    });
+    loginForm.addEventListener('submit',async e=>{e.preventDefault();appPin=$('pin').value.trim();if(!appPin){setStatus(loginStatus,'Please enter your PIN.','error');return;}loginSection.hidden=true;appSection.hidden=false;$('headerHome').hidden=true;await requestData();if(!galaData){loginSection.hidden=false;appSection.hidden=true;setStatus(loginStatus,'Login or connection failed. Please try again.','error');$('pin').value='';appPin='';}else $('pin').value='';});
+    retryButton.addEventListener('click',requestData);document.querySelectorAll('[data-page]').forEach(button=>button.addEventListener('click',()=>{const page=button.dataset.page;if(page==='Galas'){showPage('galas');renderGalas();}else if(page==='Enter Results'){showPage('results');refreshResultsGalaOptions(true);}else if(page==='Results History'){showPage('history');setHistoryCourse(historyCourse);}}));
+    $('headerHome').addEventListener('click',showHome);$('addGala').addEventListener('click',openGalaForm);$('cancelGala').addEventListener('click',closeGalaForm);galaForm.addEventListener('submit',saveGalaForm);galaFormWrap.addEventListener('click',e=>{if(e.target===galaFormWrap)closeGalaForm();});
+    $('detailBackGalas').addEventListener('click',()=>{showPage('galas');renderGalas();});$('resultEditForm').addEventListener('submit',saveEditedResult);$('cancelEditedResult').addEventListener('click',closeResultEdit);$('resultEditWrap').addEventListener('click',e=>{if(e.target===$('resultEditWrap'))closeResultEdit();});$('editResultMedal').addEventListener('change',e=>{$('editPlacingWrap').hidden=!e.target.checked;});$('detailGalaForm').addEventListener('submit',saveDetailGala);$('addEvent').addEventListener('click',()=>openEventForm());$('cancelEvent').addEventListener('click',closeEventForm);eventForm.addEventListener('submit',saveEventForm);$('eventStroke').addEventListener('change',()=>updateDistanceOptions($('eventDistance').value));$('detailGalaType').addEventListener('change',()=>{if(eventFormWrap.hidden===false)updateDistanceOptions($('eventDistance').value);});
+    resultsGalaSelect.addEventListener('change',updateResultsWorkspace);resultsEventSelect.addEventListener('change',loadSelectedResult);resultForm.addEventListener('submit',saveResult);$('resultMedal').addEventListener('change',e=>{$('placingWrap').hidden=!e.target.checked;});
+    $('historyShort').addEventListener('click',()=>setHistoryCourse('Short Course'));$('historyLong').addEventListener('click',()=>setHistoryCourse('Long Course'));$('historyStroke').addEventListener('change',()=>setHistoryCourse(historyCourse));$('historyDistance').addEventListener('change',renderHistory);
+    $('logout').addEventListener('click',()=>{appPin='';galaData=null;appSection.hidden=true;loginSection.hidden=false;$('headerHome').hidden=true;closeGalaForm();closeEventForm();closeResultEdit();setStatus(loginStatus,'You have logged out.');});
   </script>
 </body>
 </html>
