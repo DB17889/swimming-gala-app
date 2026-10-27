@@ -107,6 +107,39 @@
 </section>
 
 
+<section id="passwordChange" class="panel" hidden>
+  <h2>Change your password</h2>
+  <p>Please choose a new password before continuing.</p>
+
+  <form id="passwordChangeForm">
+    <label for="newPassword">New password</label>
+    <input
+      id="newPassword"
+      type="password"
+      autocomplete="new-password"
+      minlength="8"
+      required
+    >
+
+    <label for="confirmPassword">Confirm new password</label>
+    <input
+      id="confirmPassword"
+      type="password"
+      autocomplete="new-password"
+      minlength="8"
+      required
+    >
+
+    <button class="primary" type="submit">Update password</button>
+  </form>
+
+  <p id="passwordChangeStatus" class="status" role="status"></p>
+  <button id="cancelPasswordChange" class="secondary" type="button">
+    Log out
+  </button>
+</section>
+
+    
     <section id="app" hidden>
       <section class="panel">
         <div id="connection" class="status" role="status">Checking data connection…</div>
