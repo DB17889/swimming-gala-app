@@ -485,6 +485,7 @@ async function finishLoginAfterPasswordChange() {
   }
 }
 
+
 passwordChangeForm.addEventListener('submit', async e => {
   e.preventDefault();
 
@@ -510,18 +511,26 @@ passwordChangeForm.addEventListener('submit', async e => {
 
     if (error) throw error;
 
-    setStatus(passwordChangeStatus, 'Password updated. Checking your account…');
+    const { data: sessionData, error: sessionError } =
+      await supabaseClient.auth.getSession();
 
-    // The app_users flag must also be cleared by a trusted server.
+    if (sessionError) throw sessionError;
+
+    const session = sessionData.session;
+
+    if (!session) {
+      throw new Error('Please log in again.');
+    }
+
     const response = await fetch(
-      API.replace('/api/data', '/api/auth-check'),
+      API.replace('/api/data', '/api/password-changed'),
       {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${
-            (await supabaseClient.auth.getSession()).data.session.access_token
-          }`
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
         },
+        body: JSON.stringify({ password: newPassword }),
         cache: 'no-store'
       }
     );
@@ -529,14 +538,10 @@ passwordChangeForm.addEventListener('submit', async e => {
     const result = await response.json();
 
     if (!response.ok) {
-      throw new Error(result.error || 'Account check failed.');
+      throw new Error(result.error || 'Could not complete account setup.');
     }
 
-    if (result.permissions.must_change_password) {
-      throw new Error(
-        'Your password changed, but the account setup flag still needs clearing by the administrator.'
-      );
-    }
+    setStatus(passwordChangeStatus, 'Password updated. Signing you in…');
 
     await finishLoginAfterPasswordChange();
   } catch (error) {
@@ -547,6 +552,7 @@ passwordChangeForm.addEventListener('submit', async e => {
     );
   }
 });
+
 
 $('cancelPasswordChange').addEventListener('click', async () => {
   await supabaseClient.auth.signOut();
