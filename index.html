@@ -649,6 +649,8 @@ $('cancelPasswordChange').addEventListener('click', async () => {
   $('logout').addEventListener('click', async () => {
   await supabaseClient.auth.signOut();
   galaData = null;
+  currentUserRole = null;
+  currentUserTools = [];
   appSection.hidden = true;
   passwordChange.hidden = true;
   loginSection.hidden = false;
