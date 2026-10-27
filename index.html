@@ -364,6 +364,7 @@ async function apiRequest(method, data) {
 
     
 
+
 loginForm.addEventListener('submit', async e => {
   e.preventDefault();
 
@@ -399,10 +400,17 @@ loginForm.addEventListener('submit', async e => {
       throw new Error(result.error || 'Account check failed.');
     }
 
+    if (!result.permissions) {
+      throw new Error('Account permissions could not be loaded.');
+    }
+
     if (result.permissions.must_change_password) {
       loginSection.hidden = true;
       appSection.hidden = true;
       passwordChange.hidden = false;
+
+      $('password').value = '';
+
       setStatus(
         passwordChangeStatus,
         'Please choose a new password before continuing.'
@@ -418,10 +426,14 @@ loginForm.addEventListener('submit', async e => {
     await requestData();
 
     if (!galaData) {
+      await supabaseClient.auth.signOut();
+
       appSection.hidden = true;
       loginSection.hidden = false;
       passwordChange.hidden = true;
-      await supabaseClient.auth.signOut();
+
+      $('password').value = '';
+
       setStatus(
         loginStatus,
         'Signed in, but the data connection failed. Please try again.',
@@ -430,9 +442,12 @@ loginForm.addEventListener('submit', async e => {
     }
   } catch (error) {
     await supabaseClient.auth.signOut();
+
     appSection.hidden = true;
     passwordChange.hidden = true;
     loginSection.hidden = false;
+    $('headerHome').hidden = true;
+    $('password').value = '';
 
     setStatus(
       loginStatus,
@@ -441,6 +456,7 @@ loginForm.addEventListener('submit', async e => {
     );
   }
 });
+
 
     
 
