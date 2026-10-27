@@ -251,7 +251,42 @@
     const EVENT_STROKES=['Freestyle','Backstroke','Breaststroke','Butterfly','IM'];
     const EVENT_DISTANCES=[25,50,100,200,400,800];
     function setStatus(el,msg,type=''){el.textContent=msg;el.className='status '+type;}
-    async function apiRequest(method,data){const options={method,headers:{'X-App-Pin':appPin},cache:'no-store'};if(data!==undefined){options.headers['Content-Type']='application/json';options.body=JSON.stringify(data);}const response=await fetch(API,options);const result=await response.json();if(!response.ok)throw new Error(result.error||'Request failed ('+response.status+')');return result;}
+
+async function apiRequest(method, data) {
+  const { data: sessionData, error } =
+    await supabaseClient.auth.getSession();
+
+  if (error) throw error;
+
+  const session = sessionData.session;
+
+  if (!session) {
+    throw new Error('Please log in again.');
+  }
+
+  const options = {
+    method,
+    headers: {
+      'Authorization': `Bearer ${session.access_token}`
+    },
+    cache: 'no-store'
+  };
+
+  if (data !== undefined) {
+    options.headers['Content-Type'] = 'application/json';
+    options.body = JSON.stringify(data);
+  }
+
+  const response = await fetch(API, options);
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.error || 'Request failed (' + response.status + ')');
+  }
+
+  return result;
+}
+
     async function requestData(){setStatus(connection,'Connecting to your private GitHub data…');retryButton.hidden=true;try{const result=await apiRequest('GET');if(!result||!Array.isArray(result.galas))throw new Error('The data file has an unexpected format.');galaData=result;setStatus(connection,'Connected successfully. '+galaData.galas.length+' gala(s) found in your data file.','success');renderGalas();refreshResultsGalaOptions(false);}catch(error){galaData=null;setStatus(connection,'Connection failed: '+error.message+'. Check your Worker URL, PIN secret and GitHub permissions.','error');retryButton.hidden=false;}}
     function makeId(){return window.crypto&&typeof window.crypto.randomUUID==='function'?window.crypto.randomUUID():'gala-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10);}
     function formatDate(dateString){if(!dateString)return 'Date not set';const date=new Date(dateString+'T12:00:00');return Number.isNaN(date.getTime())?dateString:date.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});}
