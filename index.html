@@ -642,6 +642,11 @@ $('cancelPasswordChange').addEventListener('click', async () => {
 
 
     retryButton.addEventListener('click',requestData);document.querySelectorAll('[data-page]').forEach(button=>button.addEventListener('click',()=>{const page=button.dataset.page;if(page==='Galas'){showPage('galas');renderGalas();}else if(page==='Enter Results'){showPage('results');refreshResultsGalaOptions(true);}else if(page==='Results History'){showPage('history');setHistoryCourse(historyCourse);}}));
+    function applyPermissions() {
+  document.querySelectorAll('[data-requires-edit]').forEach(button => {
+    button.hidden = currentUserRole === 'View';
+  });
+}
     $('headerHome').addEventListener('click',showHome);$('addGala').addEventListener('click',openGalaForm);$('cancelGala').addEventListener('click',closeGalaForm);galaForm.addEventListener('submit',saveGalaForm);galaFormWrap.addEventListener('click',e=>{if(e.target===galaFormWrap)closeGalaForm();});
     $('detailBackGalas').addEventListener('click',()=>{showPage('galas');renderGalas();});$('resultEditForm').addEventListener('submit',saveEditedResult);$('cancelEditedResult').addEventListener('click',closeResultEdit);$('resultEditWrap').addEventListener('click',e=>{if(e.target===$('resultEditWrap'))closeResultEdit();});$('editResultMedal').addEventListener('change',e=>{$('editPlacingWrap').hidden=!e.target.checked;});$('detailGalaForm').addEventListener('submit',saveDetailGala);$('addEvent').addEventListener('click',()=>openEventForm());$('cancelEvent').addEventListener('click',closeEventForm);eventForm.addEventListener('submit',saveEventForm);$('eventStroke').addEventListener('change',()=>updateDistanceOptions($('eventDistance').value));$('detailGalaType').addEventListener('change',()=>{if(eventFormWrap.hidden===false)updateDistanceOptions($('eventDistance').value);});
     resultsGalaSelect.addEventListener('change',updateResultsWorkspace);resultsEventSelect.addEventListener('change',loadSelectedResult);resultForm.addEventListener('submit',saveResult);$('resultMedal').addEventListener('change',e=>{$('placingWrap').hidden=!e.target.checked;});
