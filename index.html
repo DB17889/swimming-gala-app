@@ -275,7 +275,7 @@
     const SUPABASE_URL = "https://pyrboiriifqgrxybrkyi.supabase.co";
     const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_l_SiM2NtSaV0fd-1irulWQ_Z9FmbNG_";
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
-    let appPin = "", galaData = null, editingEventId = null, editingResultEventId = null, activeGalaId = null, selectedGalaYear = null, historyCourse = "Short Course";
+    let galaData = null, editingEventId = null, editingResultEventId = null, activeGalaId = null, selectedGalaYear = null, historyCourse = "Short Course";
     const $ = id => document.getElementById(id);
     const loginSection=$('login'), appSection=$('app'), loginForm=$('loginForm'), loginStatus=$('loginStatus'), connection=$('connection'), retryButton=$('retry');
     const galaPage=$('galaPage'), eventPage=$('eventPage'), resultsPage=$('resultsPage'), historyPage=$('historyPage'), placeholderPage=$('placeholderPage');
@@ -575,7 +575,21 @@ $('cancelPasswordChange').addEventListener('click', async () => {
     $('detailBackGalas').addEventListener('click',()=>{showPage('galas');renderGalas();});$('resultEditForm').addEventListener('submit',saveEditedResult);$('cancelEditedResult').addEventListener('click',closeResultEdit);$('resultEditWrap').addEventListener('click',e=>{if(e.target===$('resultEditWrap'))closeResultEdit();});$('editResultMedal').addEventListener('change',e=>{$('editPlacingWrap').hidden=!e.target.checked;});$('detailGalaForm').addEventListener('submit',saveDetailGala);$('addEvent').addEventListener('click',()=>openEventForm());$('cancelEvent').addEventListener('click',closeEventForm);eventForm.addEventListener('submit',saveEventForm);$('eventStroke').addEventListener('change',()=>updateDistanceOptions($('eventDistance').value));$('detailGalaType').addEventListener('change',()=>{if(eventFormWrap.hidden===false)updateDistanceOptions($('eventDistance').value);});
     resultsGalaSelect.addEventListener('change',updateResultsWorkspace);resultsEventSelect.addEventListener('change',loadSelectedResult);resultForm.addEventListener('submit',saveResult);$('resultMedal').addEventListener('change',e=>{$('placingWrap').hidden=!e.target.checked;});
     $('historyShort').addEventListener('click',()=>setHistoryCourse('Short Course'));$('historyLong').addEventListener('click',()=>setHistoryCourse('Long Course'));$('historyStroke').addEventListener('change',()=>setHistoryCourse(historyCourse));$('historyDistance').addEventListener('change',renderHistory);
-    $('logout').addEventListener('click',()=>{appPin='';galaData=null;appSection.hidden=true;loginSection.hidden=false;$('headerHome').hidden=true;closeGalaForm();closeEventForm();closeResultEdit();setStatus(loginStatus,'You have logged out.');});
+  $('logout').addEventListener('click', async () => {
+  await supabaseClient.auth.signOut();
+  galaData = null;
+  appSection.hidden = true;
+  passwordChange.hidden = true;
+  loginSection.hidden = false;
+  $('headerHome').hidden = true;
+  $('password').value = '';
+  $('newPassword').value = '';
+  $('confirmPassword').value = '';
+  closeGalaForm();
+  closeEventForm();
+  closeResultEdit();
+  setStatus(loginStatus, 'You have logged out.');
+});
   </script>
 </body>
 </html>
