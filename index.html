@@ -442,7 +442,10 @@ loginForm.addEventListener('submit', async e => {
     if (!result.permissions) {
       throw new Error('Account permissions could not be loaded.');
     }
-
+    
+    currentUserRole = result.permissions.role;
+    currentUserTools = result.permissions.tools || [];
+    
     if (result.permissions.must_change_password) {
       loginSection.hidden = true;
       appSection.hidden = true;
