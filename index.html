@@ -432,6 +432,128 @@ loginForm.addEventListener('submit', async e => {
   }
 });
 
+    
+async function finishLoginAfterPasswordChange() {
+  const { data: sessionData, error: sessionError } =
+    await supabaseClient.auth.getSession();
+
+  if (sessionError) throw sessionError;
+
+  const session = sessionData.session;
+
+  if (!session) {
+    throw new Error('Please log in again.');
+  }
+
+  const response = await fetch(
+    API.replace('/api/data', '/api/auth-check'),
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      cache: 'no-store'
+    }
+  );
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.error || 'Account check failed.');
+  }
+
+  if (result.permissions.must_change_password) {
+    throw new Error('Your account still requires a password change.');
+  }
+
+  passwordChange.hidden = true;
+  loginSection.hidden = true;
+  appSection.hidden = false;
+  $('headerHome').hidden = true;
+
+  await requestData();
+
+  if (!galaData) {
+    appSection.hidden = true;
+    loginSection.hidden = false;
+    await supabaseClient.auth.signOut();
+    setStatus(loginStatus, 'Data connection failed. Please try again.', 'error');
+  }
+}
+
+passwordChangeForm.addEventListener('submit', async e => {
+  e.preventDefault();
+
+  const newPassword = $('newPassword').value;
+  const confirmPassword = $('confirmPassword').value;
+
+  if (newPassword.length < 8) {
+    setStatus(passwordChangeStatus, 'Use at least 8 characters.', 'error');
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    setStatus(passwordChangeStatus, 'The passwords do not match.', 'error');
+    return;
+  }
+
+  setStatus(passwordChangeStatus, 'Updating password…');
+
+  try {
+    const { error } = await supabaseClient.auth.updateUser({
+      password: newPassword
+    });
+
+    if (error) throw error;
+
+    setStatus(passwordChangeStatus, 'Password updated. Checking your account…');
+
+    // The app_users flag must also be cleared by a trusted server.
+    const response = await fetch(
+      API.replace('/api/data', '/api/auth-check'),
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${
+            (await supabaseClient.auth.getSession()).data.session.access_token
+          }`
+        },
+        cache: 'no-store'
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || 'Account check failed.');
+    }
+
+    if (result.permissions.must_change_password) {
+      throw new Error(
+        'Your password changed, but the account setup flag still needs clearing by the administrator.'
+      );
+    }
+
+    await finishLoginAfterPasswordChange();
+  } catch (error) {
+    setStatus(
+      passwordChangeStatus,
+      error.message || 'Could not update password.',
+      'error'
+    );
+  }
+});
+
+$('cancelPasswordChange').addEventListener('click', async () => {
+  await supabaseClient.auth.signOut();
+  passwordChange.hidden = true;
+  appSection.hidden = true;
+  loginSection.hidden = false;
+  $('password').value = '';
+  setStatus(loginStatus, 'You have logged out.');
+});
+
+
     retryButton.addEventListener('click',requestData);document.querySelectorAll('[data-page]').forEach(button=>button.addEventListener('click',()=>{const page=button.dataset.page;if(page==='Galas'){showPage('galas');renderGalas();}else if(page==='Enter Results'){showPage('results');refreshResultsGalaOptions(true);}else if(page==='Results History'){showPage('history');setHistoryCourse(historyCourse);}}));
     $('headerHome').addEventListener('click',showHome);$('addGala').addEventListener('click',openGalaForm);$('cancelGala').addEventListener('click',closeGalaForm);galaForm.addEventListener('submit',saveGalaForm);galaFormWrap.addEventListener('click',e=>{if(e.target===galaFormWrap)closeGalaForm();});
     $('detailBackGalas').addEventListener('click',()=>{showPage('galas');renderGalas();});$('resultEditForm').addEventListener('submit',saveEditedResult);$('cancelEditedResult').addEventListener('click',closeResultEdit);$('resultEditWrap').addEventListener('click',e=>{if(e.target===$('resultEditWrap'))closeResultEdit();});$('editResultMedal').addEventListener('change',e=>{$('editPlacingWrap').hidden=!e.target.checked;});$('detailGalaForm').addEventListener('submit',saveDetailGala);$('addEvent').addEventListener('click',()=>openEventForm());$('cancelEvent').addEventListener('click',closeEventForm);eventForm.addEventListener('submit',saveEventForm);$('eventStroke').addEventListener('change',()=>updateDistanceOptions($('eventDistance').value));$('detailGalaType').addEventListener('change',()=>{if(eventFormWrap.hidden===false)updateDistanceOptions($('eventDistance').value);});
