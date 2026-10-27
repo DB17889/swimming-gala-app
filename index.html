@@ -398,9 +398,13 @@ loginForm.addEventListener('submit', async e => {
     }
 
     if (result.permissions.must_change_password) {
+      loginSection.hidden = true;
+      appSection.hidden = true;
+      passwordChange.hidden = false;
+    
       setStatus(
-        loginStatus,
-        'Signed in. You must change your password before continuing.'
+        passwordChangeStatus,
+        'Please choose a new password before continuing.'
       );
       return;
     }
