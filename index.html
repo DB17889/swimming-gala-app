@@ -443,6 +443,7 @@ loginForm.addEventListener('submit', async e => {
 });
 
     
+
 async function finishLoginAfterPasswordChange() {
   const { data: sessionData, error: sessionError } =
     await supabaseClient.auth.getSession();
@@ -484,12 +485,24 @@ async function finishLoginAfterPasswordChange() {
   await requestData();
 
   if (!galaData) {
-    appSection.hidden = true;
-    loginSection.hidden = false;
     await supabaseClient.auth.signOut();
-    setStatus(loginStatus, 'Data connection failed. Please try again.', 'error');
+
+    appSection.hidden = true;
+    passwordChange.hidden = true;
+    loginSection.hidden = false;
+
+    $('password').value = '';
+    $('newPassword').value = '';
+    $('confirmPassword').value = '';
+
+    setStatus(
+      loginStatus,
+      'Data connection failed. Please try again.',
+      'error'
+    );
   }
 }
+
 
 
 passwordChangeForm.addEventListener('submit', async e => {
