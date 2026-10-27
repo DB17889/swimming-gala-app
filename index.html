@@ -294,7 +294,76 @@
     function setHistoryCourse(course){historyCourse=course;$('historyShort').classList.toggle('active',course==='Short Course');$('historyLong').classList.toggle('active',course==='Long Course');$('historyShort').setAttribute('aria-pressed',String(course==='Short Course'));$('historyLong').setAttribute('aria-pressed',String(course==='Long Course'));const stroke=$('historyStroke').value;const dist=$('historyDistance');const current=dist.value;const available=EVENT_DISTANCES.filter(d=>d!==25||course==='Short Course').filter(d=>stroke!=='IM'||d>=(course==='Short Course'?100:200));[...dist.options].forEach(o=>{if(o.value)o.hidden=!available.includes(Number(o.value));});if(current&& !available.includes(Number(current)))dist.value='';renderHistory();}
     function renderHistory(){const rows=allHistoryResults(),stroke=$('historyStroke').value,distance=$('historyDistance').value;const filtered=rows.filter(r=>r.type===historyCourse&&(!stroke||r.stroke===stroke)&&(!distance||r.distance===Number(distance))).sort((a,b)=>(b.date||'').localeCompare(a.date||'')||a.galaName.localeCompare(b.galaName));const selected=stroke&&distance;const fastest=selected&&filtered.length?[...filtered].sort((a,b)=>timeToCentiseconds(a.time)-timeToCentiseconds(b.time))[0]:null;const stats=$('historyStats');stats.replaceChildren();const medalCount=filtered.filter(r=>r.medal).length;const items=[{label:'Results',value:String(filtered.length)},{label:'⭐ Personal best',value:selected&&fastest?fastest.time:'—',pb:true},{label:'Medals',value:String(medalCount)}];items.forEach(item=>{const box=document.createElement('div');box.className='history-stat'+(item.pb?' pb-highlight':'');const strong=document.createElement('strong');strong.textContent=item.value;const caption=document.createElement('span');caption.className='muted';caption.textContent=item.label;box.append(strong,caption);stats.appendChild(box);});const list=$('historyList');list.replaceChildren();if(!filtered.length){const empty=document.createElement('p');empty.className='muted';empty.textContent=rows.length?'No results match these filters.':'No results recorded yet. Add results from Enter Results and they will appear here.';list.appendChild(empty);return;}filtered.forEach(row=>{const card=document.createElement('article');card.className='event-card';const isPB=selected&&fastest&&row.eventId===fastest.eventId&&row.galaId===fastest.galaId;const heading=document.createElement('h3');heading.textContent=(isPB?'⭐ ':'')+row.stroke+' '+row.distance+'m';const meta=document.createElement('p');meta.className='muted';meta.textContent=formatDate(row.date)+' · '+row.galaName+(row.venue?' · '+row.venue:'');const summary=document.createElement('div');summary.className='result-summary history-row';const timeBlock=document.createElement('div');const time=document.createElement('strong');time.textContent=row.time;const tags=document.createElement('div');tags.style.marginTop='5px';if(row.medal){const medal=document.createElement('span');medal.style.fontSize='13px';medal.style.fontWeight='700';medal.textContent='🏅 '+ordinal(row.placing||1);tags.appendChild(medal);}if(isPB){const tag=document.createElement('span');tag.className='pb-tag';tag.textContent='PERSONAL BEST';tags.appendChild(tag);}timeBlock.append(time,tags);const course=document.createElement('span');course.className='muted';course.textContent=row.type;summary.append(timeBlock,course);card.append(heading,meta,summary);list.appendChild(card);});}
 
-    loginForm.addEventListener('submit',async e=>{e.preventDefault();appPin=$('pin').value.trim();if(!appPin){setStatus(loginStatus,'Please enter your PIN.','error');return;}loginSection.hidden=true;appSection.hidden=false;$('headerHome').hidden=true;await requestData();if(!galaData){loginSection.hidden=false;appSection.hidden=true;setStatus(loginStatus,'Login or connection failed. Please try again.','error');$('pin').value='';appPin='';}else $('pin').value='';});
+    
+loginForm.addEventListener('submit', async e => {
+  e.preventDefault();
+
+  const email = $('email').value.trim();
+  const password = $('password').value;
+
+  setStatus(loginStatus, 'Signing in…');
+
+  try {
+    const { data, error } =
+      await supabaseClient.auth.signInWithPassword({
+        email,
+        password
+      });
+
+    if (error) throw error;
+
+    const response = await fetch(
+      API.replace('/api/data', '/api/auth-check'),
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${data.session.access_token}`
+        },
+        cache: 'no-store'
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || 'Account check failed.');
+    }
+
+    if (result.permissions.must_change_password) {
+      setStatus(
+        loginStatus,
+        'Signed in. You must change your password before continuing.'
+      );
+      return;
+    }
+
+    loginSection.hidden = true;
+    appSection.hidden = false;
+    $('headerHome').hidden = true;
+
+    await requestData();
+
+    if (!galaData) {
+      loginSection.hidden = false;
+      appSection.hidden = true;
+      await supabaseClient.auth.signOut();
+      setStatus(
+        loginStatus,
+        'Signed in, but the data connection failed. Please try again.',
+        'error'
+      );
+    }
+  } catch (error) {
+    await supabaseClient.auth.signOut();
+
+    setStatus(
+      loginStatus,
+      error.message || 'Login failed. Please check your details.',
+      'error'
+    );
+  }
+});
+
     retryButton.addEventListener('click',requestData);document.querySelectorAll('[data-page]').forEach(button=>button.addEventListener('click',()=>{const page=button.dataset.page;if(page==='Galas'){showPage('galas');renderGalas();}else if(page==='Enter Results'){showPage('results');refreshResultsGalaOptions(true);}else if(page==='Results History'){showPage('history');setHistoryCourse(historyCourse);}}));
     $('headerHome').addEventListener('click',showHome);$('addGala').addEventListener('click',openGalaForm);$('cancelGala').addEventListener('click',closeGalaForm);galaForm.addEventListener('submit',saveGalaForm);galaFormWrap.addEventListener('click',e=>{if(e.target===galaFormWrap)closeGalaForm();});
     $('detailBackGalas').addEventListener('click',()=>{showPage('galas');renderGalas();});$('resultEditForm').addEventListener('submit',saveEditedResult);$('cancelEditedResult').addEventListener('click',closeResultEdit);$('resultEditWrap').addEventListener('click',e=>{if(e.target===$('resultEditWrap'))closeResultEdit();});$('editResultMedal').addEventListener('change',e=>{$('editPlacingWrap').hidden=!e.target.checked;});$('detailGalaForm').addEventListener('submit',saveDetailGala);$('addEvent').addEventListener('click',()=>openEventForm());$('cancelEvent').addEventListener('click',closeEventForm);eventForm.addEventListener('submit',saveEventForm);$('eventStroke').addEventListener('change',()=>updateDistanceOptions($('eventDistance').value));$('detailGalaType').addEventListener('change',()=>{if(eventFormWrap.hidden===false)updateDistanceOptions($('eventDistance').value);});
