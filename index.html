@@ -537,6 +537,11 @@ async function finishLoginAfterPasswordChange() {
     throw new Error('Your account still requires a password change.');
   }
 
+  currentUserRole = result.permissions.role;
+currentUserTools = result.permissions.tools || [];
+
+applyPermissions();
+
   passwordChange.hidden = true;
   loginSection.hidden = true;
   appSection.hidden = false;
