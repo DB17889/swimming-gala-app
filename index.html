@@ -275,7 +275,8 @@
     const SUPABASE_URL = "https://pyrboiriifqgrxybrkyi.supabase.co";
     const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_l_SiM2NtSaV0fd-1irulWQ_Z9FmbNG_";
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
-    let galaData = null, editingEventId = null, editingResultEventId = null, activeGalaId = null, selectedGalaYear = null, historyCourse = "Short Course";
+let galaData = null, editingEventId = null, editingResultEventId = null, activeGalaId = null, selectedGalaYear = null, historyCourse = "Short Course";
+let currentUserRole = null, currentUserTools = [];
     const $ = id => document.getElementById(id);
     const loginSection=$('login'), appSection=$('app'), loginForm=$('loginForm'), loginStatus=$('loginStatus'), connection=$('connection'), retryButton=$('retry');
     const galaPage=$('galaPage'), eventPage=$('eventPage'), resultsPage=$('resultsPage'), historyPage=$('historyPage'), placeholderPage=$('placeholderPage');
