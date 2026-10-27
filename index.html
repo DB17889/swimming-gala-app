@@ -320,7 +320,45 @@ async function apiRequest(method, data) {
   return result;
 }
 
-    async function requestData(){setStatus(connection,'Connecting to your private GitHub data…');retryButton.hidden=true;try{const result=await apiRequest('GET');if(!result||!Array.isArray(result.galas))throw new Error('The data file has an unexpected format.');galaData=result;setStatus(connection,'Connected successfully. '+galaData.galas.length+' gala(s) found in your data file.','success');renderGalas();refreshResultsGalaOptions(false);}catch(error){galaData=null;setStatus(connection,'Connection failed: '+error.message+'. Check your Worker URL, PIN secret and GitHub permissions.','error');retryButton.hidden=false;}}
+
+async function requestData() {
+  setStatus(connection, 'Connecting to your private GitHub data…');
+  retryButton.hidden = true;
+
+  try {
+    const result = await apiRequest('GET');
+
+    if (!result || !Array.isArray(result.galas)) {
+      throw new Error('The data file has an unexpected format.');
+    }
+
+    galaData = result;
+
+    setStatus(
+      connection,
+      'Connected successfully. ' +
+        galaData.galas.length +
+        ' gala(s) found in your data file.',
+      'success'
+    );
+
+    renderGalas();
+    refreshResultsGalaOptions(false);
+  } catch (error) {
+    galaData = null;
+
+    setStatus(
+      connection,
+      'Connection failed: ' +
+        error.message +
+        '. Check your Supabase login, Worker configuration and GitHub permissions.',
+      'error'
+    );
+
+    retryButton.hidden = false;
+  }
+}
+
     function makeId(){return window.crypto&&typeof window.crypto.randomUUID==='function'?window.crypto.randomUUID():'gala-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10);}
     function formatDate(dateString){if(!dateString)return 'Date not set';const date=new Date(dateString+'T12:00:00');return Number.isNaN(date.getTime())?dateString:date.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});}
     function eventLabel(event,gala){return (event.stroke==='IM'?'IM':event.stroke||'Event')+' '+Number(event.distance||0)+'m - '+formatDate(event.date||gala.date);}
