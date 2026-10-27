@@ -363,6 +363,7 @@ async function apiRequest(method, data) {
     function renderHistory(){const rows=allHistoryResults(),stroke=$('historyStroke').value,distance=$('historyDistance').value;const filtered=rows.filter(r=>r.type===historyCourse&&(!stroke||r.stroke===stroke)&&(!distance||r.distance===Number(distance))).sort((a,b)=>(b.date||'').localeCompare(a.date||'')||a.galaName.localeCompare(b.galaName));const selected=stroke&&distance;const fastest=selected&&filtered.length?[...filtered].sort((a,b)=>timeToCentiseconds(a.time)-timeToCentiseconds(b.time))[0]:null;const stats=$('historyStats');stats.replaceChildren();const medalCount=filtered.filter(r=>r.medal).length;const items=[{label:'Results',value:String(filtered.length)},{label:'⭐ Personal best',value:selected&&fastest?fastest.time:'—',pb:true},{label:'Medals',value:String(medalCount)}];items.forEach(item=>{const box=document.createElement('div');box.className='history-stat'+(item.pb?' pb-highlight':'');const strong=document.createElement('strong');strong.textContent=item.value;const caption=document.createElement('span');caption.className='muted';caption.textContent=item.label;box.append(strong,caption);stats.appendChild(box);});const list=$('historyList');list.replaceChildren();if(!filtered.length){const empty=document.createElement('p');empty.className='muted';empty.textContent=rows.length?'No results match these filters.':'No results recorded yet. Add results from Enter Results and they will appear here.';list.appendChild(empty);return;}filtered.forEach(row=>{const card=document.createElement('article');card.className='event-card';const isPB=selected&&fastest&&row.eventId===fastest.eventId&&row.galaId===fastest.galaId;const heading=document.createElement('h3');heading.textContent=(isPB?'⭐ ':'')+row.stroke+' '+row.distance+'m';const meta=document.createElement('p');meta.className='muted';meta.textContent=formatDate(row.date)+' · '+row.galaName+(row.venue?' · '+row.venue:'');const summary=document.createElement('div');summary.className='result-summary history-row';const timeBlock=document.createElement('div');const time=document.createElement('strong');time.textContent=row.time;const tags=document.createElement('div');tags.style.marginTop='5px';if(row.medal){const medal=document.createElement('span');medal.style.fontSize='13px';medal.style.fontWeight='700';medal.textContent='🏅 '+ordinal(row.placing||1);tags.appendChild(medal);}if(isPB){const tag=document.createElement('span');tag.className='pb-tag';tag.textContent='PERSONAL BEST';tags.appendChild(tag);}timeBlock.append(time,tags);const course=document.createElement('span');course.className='muted';course.textContent=row.type;summary.append(timeBlock,course);card.append(heading,meta,summary);list.appendChild(card);});}
 
     
+
 loginForm.addEventListener('submit', async e => {
   e.preventDefault();
 
@@ -379,6 +380,7 @@ loginForm.addEventListener('submit', async e => {
       });
 
     if (error) throw error;
+    if (!data.session) throw new Error('No login session was created.');
 
     const response = await fetch(
       API.replace('/api/data', '/api/auth-check'),
@@ -401,7 +403,6 @@ loginForm.addEventListener('submit', async e => {
       loginSection.hidden = true;
       appSection.hidden = true;
       passwordChange.hidden = false;
-    
       setStatus(
         passwordChangeStatus,
         'Please choose a new password before continuing.'
@@ -409,6 +410,7 @@ loginForm.addEventListener('submit', async e => {
       return;
     }
 
+    passwordChange.hidden = true;
     loginSection.hidden = true;
     appSection.hidden = false;
     $('headerHome').hidden = true;
@@ -416,8 +418,9 @@ loginForm.addEventListener('submit', async e => {
     await requestData();
 
     if (!galaData) {
-      loginSection.hidden = false;
       appSection.hidden = true;
+      loginSection.hidden = false;
+      passwordChange.hidden = true;
       await supabaseClient.auth.signOut();
       setStatus(
         loginStatus,
@@ -427,6 +430,9 @@ loginForm.addEventListener('submit', async e => {
     }
   } catch (error) {
     await supabaseClient.auth.signOut();
+    appSection.hidden = true;
+    passwordChange.hidden = true;
+    loginSection.hidden = false;
 
     setStatus(
       loginStatus,
