@@ -76,16 +76,36 @@
     <button id="headerHome" class="header-home" type="button" hidden>⌂ Home</button>
   </header>
   <main>
-    <section id="login" class="panel">
-      <h2>Welcome</h2>
-      <p>Enter your app PIN to continue.</p>
-      <form id="loginForm">
-        <label for="pin">PIN</label>
-        <input id="pin" type="password" inputmode="numeric" autocomplete="off" required aria-describedby="loginStatus">
-        <button class="primary" type="submit">Log in</button>
-      </form>
-      <p id="loginStatus" class="status" role="status"></p>
-    </section>
+
+<section id="login" class="panel">
+  <h2>Welcome</h2>
+  <p>Sign in with your email address and password.</p>
+
+  <form id="loginForm">
+    <label for="email">Email address</label>
+    <input
+      id="email"
+      type="email"
+      autocomplete="username"
+      required
+      aria-describedby="loginStatus"
+    >
+
+    <label for="password">Password</label>
+    <input
+      id="password"
+      type="password"
+      autocomplete="current-password"
+      required
+      aria-describedby="loginStatus"
+    >
+
+    <button class="primary" type="submit">Log in</button>
+  </form>
+
+  <p id="loginStatus" class="status" role="status"></p>
+</section>
+
 
     <section id="app" hidden>
       <section class="panel">
