@@ -445,6 +445,8 @@ loginForm.addEventListener('submit', async e => {
     
     currentUserRole = result.permissions.role;
     currentUserTools = result.permissions.tools || [];
+
+    applyPermissions();
     
     if (result.permissions.must_change_password) {
       loginSection.hidden = true;
