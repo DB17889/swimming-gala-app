@@ -219,6 +219,9 @@
 
   <script>
     const API = "https://swimming-gala-api-auth-dev.dan-belfield.workers.dev/api/data";
+    const SUPABASE_URL = "https://pyrboiriifqgrxybrkyi.supabase.co";
+    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_l_SiM2NtSaV0fd-1irulWQ_Z9FmbNG_";
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
     let appPin = "", galaData = null, editingEventId = null, editingResultEventId = null, activeGalaId = null, selectedGalaYear = null, historyCourse = "Short Course";
     const $ = id => document.getElementById(id);
     const loginSection=$('login'), appSection=$('app'), loginForm=$('loginForm'), loginStatus=$('loginStatus'), connection=$('connection'), retryButton=$('retry');
