@@ -145,11 +145,24 @@
         <div id="connection" class="status" role="status">Checking data connection…</div>
         <button id="retry" class="secondary" type="button" hidden>Retry connection</button>
       </section>
-      <div class="menu" id="homeMenu">
-        <button class="tile" data-page="Galas"><strong>🏊 Galas</strong><span>Manage competitions and events</span></button>
-        <button class="tile" data-page="Enter Results" data-requires-edit><strong>⏱️ Enter Results</strong><span>Quickly record outstanding times</span></button>
-        <button class="tile" data-page="Results History"><strong>📈 Results History</strong><span>Review galas and compare times</span></button>
-      </div>
+
+<div class="menu" id="homeMenu">
+  <button class="tile" data-page="Galas" data-requires-swimming>
+    <strong>🏊 Galas</strong>
+    <span>Manage competitions and events</span>
+  </button>
+
+  <button class="tile" data-page="Enter Results" data-requires-edit data-requires-swimming>
+    <strong>⏱️ Enter Results</strong>
+    <span>Quickly record outstanding times</span>
+  </button>
+
+  <button class="tile" data-page="Results History" data-requires-swimming>
+    <strong>📈 Results History</strong>
+    <span>Review galas and compare times</span>
+  </button>
+</div>
+
 
       <section id="galaPage" class="panel" hidden>
         <h2 style="margin-top:0">Galas</h2>
