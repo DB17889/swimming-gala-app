@@ -291,7 +291,8 @@
 let galaData = null, editingEventId = null, editingResultEventId = null, activeGalaId = null, selectedGalaYear = null, historyCourse = "Short Course";
 let currentUserRole = null, currentUserTools = [];
     const $ = id => document.getElementById(id);
-    const loginSection=$('login'), appSection=$('app'), loginForm=$('loginForm'), loginStatus=$('loginStatus'), connection=$('connection'), retryButton=$('retry');
+const loginSection = $('login'), appSection = $('app'), loginForm = $('loginForm'), loginStatus = $('loginStatus'), connection = $('connection'), retryButton = $('retry');
+const passwordChange = $('passwordChange'), passwordChangeForm = $('passwordChangeForm'), passwordChangeStatus = $('passwordChangeStatus');
     const galaPage=$('galaPage'), eventPage=$('eventPage'), resultsPage=$('resultsPage'), historyPage=$('historyPage'), placeholderPage=$('placeholderPage');
     const resultsGalaSelect=$('resultsGalaSelect'), resultsEventSelect=$('resultsEventSelect'), resultsWorkspace=$('resultsWorkspace'), resultForm=$('resultForm');
     const eventFormWrap=$('eventFormWrap'), eventForm=$('eventForm'), galaFormWrap=$('galaFormWrap'), galaForm=$('galaForm');
